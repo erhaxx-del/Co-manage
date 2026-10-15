@@ -1,0 +1,83 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}İstasyon Ziyaretleri{% if gecikmis %}
+<details class="kart" style="border-left:4px solid var(--kirmizi)" {{ 'open' if gecikmis|length <= 8 }}><summary class="kart-bas"><h2>Gecikmiş planlar ({{ gecikmis|length }})</h2><small>Tarihi geçti, hâlâ "Planlandı" — gerçekleştiyse işaretleyin, gerçekleşmediyse erteleyin</small></summary>
+<div class="tablo-kap"><table>
+{% for z in gecikmis %}<tr><td><small>{{ trt(z.tarih, True) }}</small></td><td><small>{{ z.sm_adi }}</small></td><td><a href="{{ url_for('bayi_kart', bid=z.bayi_id) }}">{{ z.ilce }} · {{ (z.unvan or '')[:50] }}</a></td><td><small>{{ z.amac }}</small></td>
+<td>{% if duzenleyebilir(z.sm_adi) %}<form class="satir" method="post" action="{{ url_for('ziyaret_tamamla', zid=z.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="btn kucuk yesil">Gerçekleşti</button></form> <a class="btn kucuk" href="{{ url_for('ziyaret_duzenle', zid=z.id) }}">Ertele / düzenle</a>{% endif %}</td></tr>{% endfor %}
+</table></div></details>
+{% endif %}
+
+{% endblock %}
+{% block icerik %}
+<div class="ust">
+  <div><h1>İstasyon Ziyaretleri</h1><small>Haftanın planı ve ziyaret kayıtları · hafta pazartesi başlar</small></div>
+  <div class="sag">
+    <a class="btn {{ 'ana' if gorunum=='hafta' }}" href="{{ url_for('ziyaretler', gorunum='hafta', sm=sm, hafta=kay) }}">Haftalık plan</a>
+    <a class="btn {{ 'ana' if gorunum=='liste' }}" href="{{ url_for('ziyaretler', gorunum='liste', sm=sm) }}">Liste</a>
+    {% if not salt_okunur %}<a class="btn ana" href="{{ url_for('ziyaret_yeni') }}">+ Ziyaret planla</a>{% endif %}
+  </div>
+</div>
+<div class="kpiler">
+  <div class="kpi"><div class="e">Bu hafta planlı</div><div class="d">{{ ozet.hafta }}</div></div>
+  <div class="kpi {{ 'kirmizi' if ozet.gecikmis }}"><div class="e">Gecikmiş plan</div><div class="d">{{ ozet.gecikmis }}</div></div>
+  <div class="kpi"><div class="e">Gelecek hafta</div><div class="d">{{ ozet.gelecek }}</div></div>
+  <div class="kpi yesil"><div class="e">Bu ay gerçekleşen</div><div class="d">{{ ozet.ay_gercek }}</div></div>
+</div>
+{% if gorunum == 'hafta' %}
+<div class="kart">
+  <div class="kart-bas">
+    <div style="display:flex;gap:8px;align-items:center">
+      <a class="btn kucuk" href="{{ url_for('ziyaretler', hafta=kay-1, sm=sm) }}">‹ Önceki</a>
+      <h2>{{ trt(gunler[0]) }} – {{ trt(gunler[-1]) }}{% if kay==0 %} · bu hafta{% elif kay==1 %} · gelecek hafta{% endif %}</h2>
+      <a class="btn kucuk" href="{{ url_for('ziyaretler', hafta=kay+1, sm=sm) }}">Sonraki ›</a>
+      {% if kay != 0 %}<a class="btn kucuk" href="{{ url_for('ziyaretler', sm=sm) }}">Bugün</a>{% endif %}
+    </div>
+    <form method="get" class="filtre" style="padding:0;border:0;background:none"><input type="hidden" name="hafta" value="{{ kay }}">
+      <select name="sm"><option value="">Tüm saha müdürleri</option>{% for s in H.SM_ADLARI %}<option {{ 'selected' if sm==s }}>{{ s }}</option>{% endfor %}</select></form>
+  </div>
+  <div class="tablo-kap"><div class="hafta" style="grid-template-columns:150px repeat({{ gunler|length }}, minmax(150px,1fr))">
+    <div class="h"></div>
+    {% for g in gunler %}<div class="h {{ 'bugun' if g==bugun }}">{{ H.GUNLER[g.weekday()] }}<br><span style="font-weight:400">{{ trt(g) }}</span></div>{% endfor %}
+    {% for s, gunl in izgara.items() %}
+      <div class="sm">{{ H.SM_KOD[s] }}<br>{{ s|ad }}</div>
+      {% for g in gunler %}<div class="c {{ 'bugun' if g==bugun }}">
+        {% for z in gunl[g.isoformat()] %}
+        <a class="zk {{ z.zaman.split(' ')[0] }}" href="{{ url_for('ziyaret_duzenle', zid=z.id) if duzenleyebilir(z.sm_adi) else url_for('bayi_kart', bid=z.bayi_id) }}" title="{{ z.unvan }} · {{ z.amac }} · {{ z.durum }}">
+          <b>{{ z.ilce }}{% if z.segment %}<span class="seg {{ z.segment }}">{{ z.segment }}</span>{% endif %}</b>{{ (z.unvan or '')[:26] }}<br><span class="soluk">{{ z.amac }}</span></a>
+        {% endfor %}
+        {% if duzenleyebilir(s) %}<a class="soluk" style="font-size:11px" href="{{ url_for('ziyaret_yeni', tarih=g.isoformat(), sm=s) }}">+ ekle</a>{% endif %}
+      </div>{% endfor %}
+    {% endfor %}
+  </div></div>
+</div>
+{% else %}
+<div class="kart">
+  <form class="filtre" method="get"><input type="hidden" name="gorunum" value="liste">
+    <label>Saha müdürü<select name="sm"><option value="">Tümü</option>{% for s in H.SM_ADLARI %}<option {{ 'selected' if sm==s }}>{{ s }}</option>{% endfor %}</select></label>
+    <label>Durum<select name="durum"><option value="">Tümü</option>{% for x in H.ZIYARET_DURUMLARI %}<option {{ 'selected' if f.durum==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Zaman<select name="zaman"><option value="">Tümü</option>{% for x in ['Gecikmiş Plan','Bu Hafta','Gelecek Hafta','İleride','Gerçekleşti','Ertelendi','İptal'] %}<option {{ 'selected' if f.zaman==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Amaç<select name="amac"><option value="">Tümü</option>{% for x in H.ZIYARET_AMACLARI %}<option {{ 'selected' if f.amac==x }}>{{ x }}</option>{% endfor %}</select></label>
+  </form>
+  <div class="tablo-kap"><table>
+    <tr><th>Tarih</th><th>Saha müdürü</th><th>Bayi</th><th>Seg.</th><th>Amaç</th><th>Proje</th><th>Durum</th><th>Not</th><th></th></tr>
+    {% for z in liste %}<tr>
+      <td><small>{{ trt(z.tarih, True) }}</small></td><td><small>{{ z.sm_adi }}</small></td>
+      <td><a href="{{ url_for('bayi_kart', bid=z.bayi_id) }}">{{ z.ilce }} · {{ (z.unvan or '')[:40] }}</a></td>
+      <td>{% if z.segment %}<span class="seg {{ z.segment }}">{{ z.segment }}</span>{% endif %}</td>
+      <td><small>{{ z.amac }}</small></td>
+      <td>{% if z.proje_id %}<a class="kod" href="{{ url_for('proje_kart', pid=z.proje_id) }}">{{ z.proje_id }}</a>{% endif %}</td>
+      <td>{{ rz(z.zaman) }}</td><td style="max-width:260px"><small>{{ z.notu or '' }}</small></td>
+      <td>{% if duzenleyebilir(z.sm_adi) %}<a class="btn kucuk" href="{{ url_for('ziyaret_duzenle', zid=z.id) }}">Düzenle</a>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="9" class="bos">Kayıt yok.</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endif %}
+{% if gecikmis %}
+<details class="kart" style="border-left:4px solid var(--kirmizi)" {{ 'open' if gecikmis|length <= 8 }}><summary class="kart-bas"><h2>Gecikmiş planlar ({{ gecikmis|length }})</h2><small>Tarihi geçti, hâlâ "Planlandı" — gerçekleştiyse işaretleyin, gerçekleşmediyse erteleyin</small></summary>
+<div class="tablo-kap"><table>
+{% for z in gecikmis %}<tr><td><small>{{ trt(z.tarih, True) }}</small></td><td><small>{{ z.sm_adi }}</small></td><td><a href="{{ url_for('bayi_kart', bid=z.bayi_id) }}">{{ z.ilce }} · {{ (z.unvan or '')[:50] }}</a></td><td><small>{{ z.amac }}</small></td>
+<td>{% if duzenleyebilir(z.sm_adi) %}<form class="satir" method="post" action="{{ url_for('ziyaret_tamamla', zid=z.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="btn kucuk yesil">Gerçekleşti</button></form> <a class="btn kucuk" href="{{ url_for('ziyaret_duzenle', zid=z.id) }}">Ertele / düzenle</a>{% endif %}</td></tr>{% endfor %}
+</table></div></details>
+{% endif %}
+
+{% endblock %}

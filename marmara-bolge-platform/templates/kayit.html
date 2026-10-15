@@ -1,0 +1,37 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kayıt ol · Marmara Bölge Yönetim Platformu</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></head>
+<body><div class="giris-zemin"><div class="giris-kart genis">
+<h1>Kayıt ol</h1><p>Marmara Bölge · Yönetim Platformu</p>
+{% with ms = get_flashed_messages(with_categories=true) %}{% for k, m in ms %}<div class="mesaj {{ k }}">{{ m }}</div>{% endfor %}{% endwith %}
+<form id="kayit-form" method="post" autocomplete="off">
+<input type="hidden" name="_csrf" value="{{ csrf() }}">
+<div class="alan"><label>1 · Kim olarak kayıt oluyorsunuz?</label>
+  <div class="mintika-sec">
+    <label class="bm {{ 'kapali' if not bm_bos }}"><input type="radio" name="mintika" value="NW1" required {{ 'checked' if fo.mintika=='NW1' }} {{ 'disabled' if not bm_bos }}>
+      <b>NW1 · Erhan Başaçar</b><small>{% if bm_bos %}Bölge Müdürü · tüm bölgeyi yönetir (kurulum kodu gerekir){% else %}Bölge Müdürü hesabı oluşturuldu — <a href="{{ url_for('giris') }}">giriş yapın</a>{% endif %}</small></label>
+    <label class="zy"><input type="radio" name="mintika" value="ZIYARETCI" required {{ 'checked' if fo.mintika=='ZIYARETCI' }}>
+      <b>Ziyaretçi</b><small>Tüm bölgeyi görüntüler, değişiklik yapamaz</small></label>
+  </div>
+  <div class="ayrac-yazi">Saha müdürü iseniz mıntıkanızı seçin</div>
+  <div class="mintika-sec">
+  {% for m in mintikalar %}
+    <label><input type="radio" name="mintika" value="{{ m.kod }}" required {{ 'checked' if fo.mintika==m.kod }}>
+      <b>{{ m.kod }} · {{ m.sm|ad }}</b><small>{{ m.iller|join(', ') }}</small></label>
+  {% endfor %}
+  </div>
+</div>
+<div class="alan" id="kurulum-alan" {{ 'hidden' if fo.mintika!='NW1' }}><label for="kk">Kurulum kodu</label><input id="kk" name="kurulum_kodu" type="password" autocomplete="off">
+  <span class="ipucu">Platformu ilk başlattığınızda siyah pencerede ve <b>instance/ilk_sifreler.txt</b> dosyasında yazan şifre. Bu kodla bölge müdürü hesabı onay beklemeden size bağlanır.</span></div>
+<div class="alan" id="ad-alan" {{ 'hidden' if fo.mintika=='NW1' }}><label for="ad">2 · Adınız soyadınız</label><input id="ad" name="ad_soyad" value="{{ fo.ad_soyad if fo.mintika!='NW1' }}" minlength="3" maxlength="60" autocomplete="name"></div>
+<div class="alan"><label for="ka">3 · Kullanıcı adı belirleyin</label><input id="ka" name="kullanici_adi" value="{{ fo.kullanici_adi }}" required pattern="[a-zA-Z0-9._]{3,20}" autocapitalize="none" autocomplete="username" placeholder="ör. salih.kosif">
+  <span class="ipucu">3–20 karakter · harf, rakam, nokta, alt çizgi (Türkçe karakter olmadan)</span></div>
+<div class="alan"><label for="s1">4 · Şifre belirleyin</label><input id="s1" name="sifre" type="password" required minlength="8" autocomplete="new-password">
+  <span class="ipucu">En az 8 karakter, harf ve rakam içermeli</span></div>
+<div class="alan"><label for="s2">Şifre (tekrar)</label><input id="s2" name="sifre2" type="password" required minlength="8" autocomplete="new-password"></div>
+<button class="btn ana" type="submit">Kayıt ol</button>
+</form>
+<div class="giris-alt">Saha müdürü ve ziyaretçi kayıtları bölge müdürünün onayına gider; onaylandıktan sonra giriş yapabilirsiniz.<br>
+Zaten hesabınız var mı? <a href="{{ url_for('giris') }}">Giriş yapın</a></div>
+</div></div>
+<script src="{{ url_for('static', filename='js/kayit.js') }}"></script>
+</body></html>

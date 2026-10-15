@@ -1,0 +1,11 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kayıt alındı · Marmara Bölge Yönetim Platformu</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></head>
+<body><div class="giris-zemin"><div class="giris-kart">
+<h1>Kaydınız alındı</h1><p>Teşekkürler, {{ fo.ad_soyad }}.</p>
+<div class="bilgi-kutu" style="margin-bottom:16px">
+  <div><small>Kullanıcı adı</small><br><b>{{ fo.kullanici_adi }}</b></div>
+  <div style="margin-top:8px"><small>{{ 'Kullanıcı türü' if ziyaretci else 'Mıntıka' }}</small><br><b>{% if ziyaretci %}Ziyaretçi · yalnızca görüntüleme{% else %}{{ fo.mintika }} · {{ sm|ad }}{% endif %}</b></div>
+</div>
+<div class="mesaj uyari">Hesabınız <b>bölge müdürü onayı</b> bekliyor. Onaylandıktan sonra bu kullanıcı adı ve belirlediğiniz şifreyle giriş yapabilirsiniz.</div>
+<a class="btn ana" href="{{ url_for('giris') }}">Giriş ekranına dön</a>
+</div></div></body></html>

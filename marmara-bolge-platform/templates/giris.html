@@ -1,0 +1,14 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giriş · Marmara Bölge Yönetim Platformu</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></head>
+<body><div class="giris-zemin"><div class="giris-kart">
+<h1>Marmara Bölge</h1><p>Güzel Enerji · Yönetim Platformu</p>
+{% with ms = get_flashed_messages(with_categories=true) %}{% for k, m in ms %}<div class="mesaj {{ k }}">{{ m }}</div>{% endfor %}{% endwith %}
+<form method="post" autocomplete="on">
+<input type="hidden" name="_csrf" value="{{ csrf() }}">
+<div class="alan"><label for="ka">Kullanıcı adı</label><input id="ka" name="kullanici_adi" required autofocus autocomplete="username" autocapitalize="none"></div>
+<div class="alan"><label for="sf">Şifre</label><input id="sf" name="sifre" type="password" required autocomplete="current-password"></div>
+<button class="btn ana" type="submit">Giriş yap</button>
+</form>
+<div class="giris-alt" style="font-size:13px;color:var(--gri)">Hesabınız yok mu? <a href="{{ url_for('kayit') }}">Kayıt olun</a> · <a href="{{ url_for('kayit', tur='ZIYARETCI') }}">Ziyaretçi hesabı isteyin</a></div>
+<div class="giris-alt">Şifrenizi unuttuysanız bölge müdürünüzden sıfırlama isteyin.</div>
+</div></div></body></html>

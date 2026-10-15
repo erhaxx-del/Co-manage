@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% block baslik %}{{ 'Yeni proje' if yeni else 'Düzenle · ' ~ p.id }}{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>{% if yeni %}{{ 'Yeni alt adım' if p.ust_id else 'Yeni proje' }}{% else %}Proje düzenle · <span class="kod">{{ p.id }}</span>{% endif %}</h1>
+<small>{% if p.aksaklik_id %}Aksaklık kaydından dönüştürülüyor — kaydettiğinizde bulgu "Projeye dönüştü" olarak işaretlenir.{% else %}Önce saha müdürünü seçin; il ve bayi listeleri o müdürün mıntıkasına göre daralır.{% endif %}</small></div></div>
+<form id="proje-form" method="post" data-yeni="{{ 1 if yeni else 0 }}" class="kart"><div class="kart-ic">
+<input type="hidden" name="_csrf" value="{{ csrf() }}">{% if p.aksaklik_id %}<input type="hidden" name="aksaklik_id" value="{{ p.aksaklik_id }}">{% endif %}
+<div class="form-izgara">
+  <div class="alan"><label class="zorunlu" for="sm_adi">Saha müdürü</label>
+    {% if ku.rol=='admin' and (yeni or not p.ust_id) %}<select id="sm_adi" name="sm_adi" required><option value="">— seçin —</option>{% for s in H.SM_ADLARI %}<option value="{{ s }}" {{ 'selected' if p.sm_adi==s }}>{{ H.SM_KOD[s] }} · {{ s }}</option>{% endfor %}</select>
+    {% else %}<input id="sm_adi" value="{{ p.sm_adi }}" readonly><input type="hidden" name="sm_adi" value="{{ p.sm_adi }}">{% endif %}</div>
+  {% if yeni %}
+  <div class="alan"><label for="ust_id">Bağlı olduğu ana proje</label>
+    <select id="ust_id" name="ust_id"><option value="">— yok, bu bir ana proje —</option>
+    {% for a in ana_projeler if ku.rol=='admin' or a.sm_adi==ku.sm_adi %}<option value="{{ a.id }}" data-sm="{{ a.sm_adi }}" {{ 'selected' if p.ust_id==a.id }}>{{ a.id }} · {{ a.ad[:55] }}</option>{% endfor %}</select>
+    <span class="ipucu">Alt adım açıyorsanız seçin; numara otomatik verilir.</span></div>
+  <div class="alan"><label for="id">Proje ID</label><input id="id" name="id" value="{{ p.id or '' }}" placeholder="otomatik"><span class="ipucu">Kod + sıra: NW14-4 · alt adım: NW14-41</span></div>
+  {% else %}
+  <div class="alan"><label>Proje ID</label><input value="{{ p.id }}" readonly></div>
+  {% endif %}
+  <div class="alan genis"><label class="zorunlu" for="ad">Proje adı</label><input id="ad" name="ad" value="{{ p.ad or '' }}" required maxlength="160" placeholder="Örn: Bandırma bayisinde tabela yenileme"></div>
+  <div class="alan genis"><label for="aciklama">Açıklama</label><textarea id="aciklama" name="aciklama">{{ p.aciklama or '' }}</textarea></div>
+  <div class="alan"><label for="il">İl</label><select id="il" name="il" data-deger="{{ p.il or '' }}"><option value="{{ p.il or '' }}">{{ p.il or '← Önce saha müdürü seçin' }}</option></select></div>
+  <div class="alan"><label for="bayi">Bayi</label><select id="bayi" name="bayi" data-deger="{{ p.bayi or '' }}"><option value="{{ p.bayi or '' }}">{{ p.bayi or '← Önce saha müdürü seçin' }}</option></select><span class="ipucu">Yalnızca seçili saha müdürünün bayileri listelenir.</span></div>
+  <div class="alan"><label class="zorunlu" for="departman">Departman</label><select id="departman" name="departman" required>{% for x in H.DEPARTMANLAR %}<option {{ 'selected' if p.departman==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label for="is_konusu">İş konusu</label><select id="is_konusu" name="is_konusu"><option value="">—</option>{% for x in H.IS_KONULARI %}<option {{ 'selected' if p.is_konusu==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label class="zorunlu" for="oncelik">Öncelik</label><select id="oncelik" name="oncelik">{% for x in H.ONCELIKLER %}<option {{ 'selected' if p.oncelik==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label class="zorunlu" for="durum">Durum</label><select id="durum" name="durum">{% for x in H.DURUMLAR %}<option {{ 'selected' if p.durum==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label for="ilerleme">İlerleme (%)</label><input id="ilerleme" name="ilerleme" type="number" min="0" max="100" step="5" value="{{ p.ilerleme if p.ilerleme is not none else 0 }}"></div>
+  <div class="alan"><label for="baslangic">Başlangıç</label><input id="baslangic" name="baslangic" type="date" value="{{ p.baslangic or '' }}"></div>
+  <div class="alan"><label class="zorunlu" for="termin">Termin</label><input id="termin" name="termin" type="date" value="{{ p.termin or '' }}" required><span class="ipucu">Kalan gün, gecikme ve pano sıralaması buradan hesaplanır.</span></div>
+  <div class="alan"><label for="tamamlanma">Tamamlanma</label><input id="tamamlanma" name="tamamlanma" type="date" value="{{ p.tamamlanma or '' }}"></div>
+  <div class="alan genis"><label for="notlar">Notlar</label><textarea id="notlar" name="notlar">{{ p.notlar or '' }}</textarea></div>
+</div>
+<div class="form-alt"><a class="btn" href="{{ url_for('proje_kart', pid=p.id) if not yeni else url_for('projeler') }}">Vazgeç</a><button class="btn ana" type="submit">Kaydet</button></div>
+</div></form>
+{% endblock %}

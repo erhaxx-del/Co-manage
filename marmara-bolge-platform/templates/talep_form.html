@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block baslik %}{{ 'Bölge müdürüne iş ata' if yeni else 'İş düzenle' }}{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>{{ 'Bölge müdürüne iş ata' if yeni else 'İş düzenle · #' ~ t.id }}</h1>
+<small>Bölge müdüründen beklediğiniz onay, karar, destek veya ziyareti yazın. İş "Saha'dan Gelen İşler" ekranına düşer; durumu ve yanıtları buradan takip edersiniz.</small></div></div>
+<form method="post" class="kart"><div class="kart-ic">
+<input type="hidden" name="_csrf" value="{{ csrf() }}">
+<div class="form-izgara">
+  <div class="alan genis"><label class="zorunlu" for="baslik">İş</label><input id="baslik" name="baslik" value="{{ t.baslik or '' }}" required minlength="3" maxlength="160" placeholder="Örn: Bandırma bayisi için 0,40 TL/lt iskonto onayı"></div>
+  <div class="alan genis"><label for="aciklama">Açıklama</label><textarea id="aciklama" name="aciklama" placeholder="Arka plan, beklenen karar, rakamlar…">{{ t.aciklama or '' }}</textarea></div>
+  <div class="alan"><label class="zorunlu" for="oncelik">Öncelik</label><select id="oncelik" name="oncelik">{% for x in H.ONCELIKLER %}<option {{ 'selected' if t.oncelik==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label for="termin">İstenen tarih</label><input id="termin" name="termin" type="date" value="{{ t.termin or '' }}"><span class="ipucu">Ne zamana kadar sonuç bekliyorsunuz?</span></div>
+  <div class="alan"><label for="departman">İlgili departman</label><select id="departman" name="departman"><option value="">—</option>{% for x in H.DEPARTMANLAR %}<option {{ 'selected' if t.departman==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label for="bayi_id">İlgili bayi</label><select id="bayi_id" name="bayi_id"><option value="">—</option>{% for b in bayiler %}<option value="{{ b.id }}" {{ 'selected' if t.bayi_id==b.id }}>{{ b.il }} · {{ b.ilce }} · {{ b.unvan[:50] }}</option>{% endfor %}</select></div>
+  <div class="alan genis"><label for="proje_id">İlgili proje</label><select id="proje_id" name="proje_id"><option value="">—</option>{% for p in projeler_ %}<option value="{{ p.id }}" {{ 'selected' if t.proje_id==p.id }}>{{ p.id }} · {{ p.ad[:70] }}</option>{% endfor %}</select></div>
+</div>
+<div class="form-alt">
+  {% if not yeni %}<button class="btn tehlike" name="geri_cek" value="1" formnovalidate>İşi geri çek</button><span style="flex:1"></span>{% endif %}
+  <a class="btn" href="{{ url_for('talepler') if yeni else url_for('talep_kart', tid=t.id) }}">Vazgeç</a><button class="btn ana" type="submit">{{ 'Bölge müdürüne gönder' if yeni else 'Kaydet' }}</button></div>
+</div></form>
+{% endblock %}

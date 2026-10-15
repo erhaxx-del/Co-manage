@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}Pazar Payı{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Pazar Payı</h1><small>EPDK İller Bazında Sektör Raporu · Ocak–Temmuz 2026 / 2025 · WO (benzin + motorin), m³ · bp = baz puan (100 bp = 1 puan)</small></div></div>
+{% macro satir(ad, alt, r, kalin=False) %}
+<tr class="{{ 'toplam' if kalin }}"><td><b>{{ ad }}</b>{% if alt %}<br><small>{{ alt }}</small>{% endif %}</td><td class="s">{{ r.istasyon }}</td>
+<td class="s">{{ sayi(r.ge25) }}</td><td class="s">{{ sayi(r.ge26) }}</td><td class="s {{ 'neg' if (r.ge_buy or 0)<0 }}">{{ yuzde(r.ge_buy) }}</td>
+<td class="s">{{ sayi(r.s25) }}</td><td class="s">{{ sayi(r.s26) }}</td><td class="s {{ 'neg' if (r.s_buy or 0)<0 }}">{{ yuzde(r.s_buy) }}</td>
+<td class="s">{{ yuzde(r.pp25,2) }}</td><td class="s"><b>{{ yuzde(r.pp26,2) }}</b></td>
+<td class="s {{ 'neg' if r.bp<0 else 'poz' }}"><b>{{ bp(r.bp) }}</b></td><td>{{ rz(r.degerlendirme) }}</td></tr>
+{% endmacro %}
+{% set bas %}<tr><th></th><th class="s">İstasyon</th><th class="s">GE 2025 m³</th><th class="s">GE 2026 m³</th><th class="s">GE büyüme</th><th class="s">Sektör 2025</th><th class="s">Sektör 2026</th><th class="s">Sektör büy.</th><th class="s">Pay 2025</th><th class="s">Pay 2026</th><th class="s">Değişim</th><th></th></tr>{% endset %}
+<div class="kpiler">
+  <div class="kpi"><div class="e">Marmara pazar payı</div><div class="d">{{ yuzde(pp.bolge.pp26,2) }}</div><div class="a">2025: {{ yuzde(pp.bolge.pp25,2) }}</div></div>
+  <div class="kpi {{ 'kirmizi' if pp.bolge.bp<0 else 'yesil' }}"><div class="e">Değişim</div><div class="d">{{ bp(pp.bolge.bp) }}</div><div class="a">Türkiye: {{ bp(pp.turkiye.bp) }}</div></div>
+  <div class="kpi"><div class="e">GE hacim büyümesi</div><div class="d">{{ yuzde(pp.bolge.ge_buy) }}</div><div class="a">sektör: {{ yuzde(pp.bolge.s_buy) }}</div></div>
+  <div class="kpi"><div class="e">Türkiye ortalamasına fark</div><div class="d">{{ bp((pp.bolge.pp26-pp.turkiye.pp26)*10000) }}</div><div class="a">Türkiye payı {{ yuzde(pp.turkiye.pp26,2) }}</div></div>
+</div>
+<div class="kart"><div class="kart-bas"><h2>Bölge / Türkiye</h2></div><div class="tablo-kap"><table>{{ bas }}
+  {{ satir('MARMARA BÖLGESİ','11 il · Erhan Başaçar',pp.bolge,True) }}{{ satir('TÜRKİYE GENELİ','81 il · sektör geneli',pp.turkiye) }}</table></div></div>
+<div class="izgara iki">
+  <div class="kart"><div class="kart-bas"><h2>Saha müdürü: pay 2025 / 2026</h2></div><div class="kart-ic" style="height:260px"><canvas data-grafik="sm-pp" data-veri="pp-veri"></canvas></div></div>
+  <div class="kart"><div class="kart-bas"><h2>Marmara aylık pazar payı</h2></div><div class="kart-ic" style="height:260px"><canvas data-grafik="aylik" data-veri="pp-veri"></canvas></div></div>
+</div>
+<div class="kart"><div class="kart-bas"><h2>Saha müdürü bazında</h2><small>Paylaşımlı iller (İstanbul, Kocaeli) istasyon sayısı ağırlığıyla</small></div><div class="tablo-kap"><table>{{ bas }}
+  {% for r in pp.sm %}{{ satir(r.sm, r.iller|map('join',' ')|join(' · ') ~ '', r) }}{% endfor %}
+  {{ satir('BÖLGE TOPLAMI','6 saha müdürü',pp.bolge,True) }}</table></div></div>
+<div class="izgara yan">
+<div class="kart"><div class="kart-bas"><h2>Şehir kırılımı</h2><small>pay değişimine göre sıralı</small></div><div class="tablo-kap"><table>{{ bas }}
+  {% for r in pp.sehir %}{{ satir(r.il, r.sahipler|map('join',' ')|join(' · '), r) }}{% endfor %}
+  {{ satir('MARMARA TOPLAMI','11 il',pp.bolge,True) }}</table></div></div>
+<div class="kart"><div class="kart-bas"><h2>İl bazında değişim</h2></div><div class="kart-ic" style="height:420px"><canvas data-grafik="il-bp" data-veri="pp-veri"></canvas></div></div>
+</div>
+<div class="kart"><div class="kart-bas"><h2>Aylık seyir</h2></div><div class="tablo-kap"><table>{{ bas }}
+  {% for r in pp.aylik %}{{ satir(r.ay, '2026 / 2025', r) }}{% endfor %}</table></div></div>
+<div class="kart"><div class="kart-bas"><h2>Öne çıkan bulgular</h2></div><div class="kart-ic not-blok">
+<p><b>Bölge payı geriledi, Türkiye yatay.</b> Marmara payı %10,14'ten %9,83'e indi (−31 bp); Türkiye %8,25 → %8,27. Kayıp bölgeye özgü. Hacim %0,5 artarken pazar %3,7 büyüdü — pazarın hızına yetişilemedi.</p>
+<p><b>Trakya hattı tek kazanan.</b> Yüksel Aydınol mıntıkası +268 bp: Edirne +435 bp, Kırklareli +214 bp, Tekirdağ +62 bp. Kendi pompa verimizdeki %52'lik YTD artışla örtüşüyor.</p>
+<p><b>Balıkesir en sert kayıp (−259 bp).</b> Hacmimiz %12,4 düşerken il pazarı %6,3 büyüdü. Bursa (−116 bp) ve Kocaeli (−117 bp) yüksek paylı illerde erozyon var.</p>
+<p><b>Kayıp Mart'ta yoğunlaştı (−162 bp)</b>, Nisan'dan itibaren tablo dengelendi.</p>
+<p class="soluk">Not: EPDK verisi il bazındadır; İstanbul ve Kocaeli'de saha müdürü satırları istasyon sayısı ağırlığıyla hesaplanır. Yeni aylar geldiğinde veritabanındaki pazar_il tablosu güncellenir.</p>
+</div></div>
+<script type="application/json" id="pp-veri">{{ grafik|tojson }}</script>
+{% endblock %}

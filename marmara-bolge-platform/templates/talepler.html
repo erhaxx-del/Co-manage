@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}{{ 'Saha\'dan Gelen İşler' if ku.rol=='admin' else 'Bölge Müdürüne Atadığım İşler' }}{% endblock %}
+{% block icerik %}
+<div class="ust">
+  <div><h1>{{ "Saha'dan Gelen İşler" if ku.rol=='admin' else 'Bölge Müdürüne Atadığım İşler' }}</h1>
+  <small>{% if ku.rol=='admin' %}Saha müdürlerinin sizden beklediği işler — durumunu güncelleyin, not yazın{% else %}Bölge müdüründen beklediğiniz işler (onay, destek, karar, ziyaret…). Yalnızca siz ve bölge müdürü görür.{% endif %}</small></div>
+  {% if ku.rol=='saha' %}<div class="sag"><a class="btn ana" href="{{ url_for('talep_yeni') }}">+ Bölge müdürüne iş ata</a></div>{% endif %}
+</div>
+<div class="kpiler">
+  <div class="kpi turuncu"><div class="e">Yeni</div><div class="d">{{ ozet.yeni }}</div><div class="a">{{ 'henüz bakılmadı' if ku.rol=='admin' else 'bölge müdürü henüz bakmadı' }}</div></div>
+  <div class="kpi"><div class="e">Açık</div><div class="d">{{ ozet.acik }}</div><div class="a">sonuçlanmamış</div></div>
+  <div class="kpi kirmizi"><div class="e">Geciken</div><div class="d">{{ ozet.geciken }}</div><div class="a">istenen tarih geçti</div></div>
+</div>
+<div class="kart">
+  <form class="filtre" method="get">
+    {% if ku.rol=='admin' %}<label>Saha müdürü<select name="sm"><option value="">Tümü</option>{% for s in H.SM_ADLARI %}<option value="{{ s }}" {{ 'selected' if f.sm==s }}>{{ H.SM_KOD[s] }} · {{ s|ad }}</option>{% endfor %}</select></label>{% endif %}
+    <label>Durum<select name="durum"><option value="">Açık olanlar</option>{% for x in H.TALEP_DURUMLARI %}<option {{ 'selected' if f.durum==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Kapananlar<select name="kapali"><option value="">Gizle</option><option value="1" {{ 'selected' if f.kapali=='1' }}>Göster</option></select></label>
+  </form>
+  <div class="tablo-kap"><table>
+    <tr><th>No</th><th>İş</th>{% if ku.rol=='admin' %}<th>Atayan</th>{% endif %}<th>Öncelik</th><th>İstenen tarih</th><th class="s">Kalan</th><th>Durum</th><th>Son yanıt</th>{% if ku.rol=='admin' %}<th>Hızlı güncelle</th>{% endif %}</tr>
+    {% for t in talepler %}
+    <tr class="{{ 'gecik' if t.zaman=='Geciken' }} {{ 'tamam' if t.durum in ('Tamamlandı','Reddedildi') }}">
+      <td><span class="kod">#{{ t.id }}</span></td>
+      <td><a href="{{ url_for('talep_kart', tid=t.id) }}"><b>{{ t.baslik }}</b></a>
+        {% set parca = [] %}{% if t.departman %}{% set _ = parca.append(t.departman) %}{% endif %}{% if t.unvan %}{% set _ = parca.append(t.il ~ ' · ' ~ t.unvan[:40]) %}{% endif %}{% if t.proje_id %}{% set _ = parca.append(t.proje_id) %}{% endif %}{% if t.not_sayisi %}{% set _ = parca.append(t.not_sayisi ~ ' not') %}{% endif %}
+        {% if parca %}<br><small>{{ parca|join(' · ') }}</small>{% endif %}</td>
+      {% if ku.rol=='admin' %}<td><small>{{ H.SM_KOD.get(t.sm_adi,'') }} · {{ t.sm_adi|ad }}</small><br><small class="soluk">{{ trt((t.olusturma or '')[:10]) }}</small></td>{% endif %}
+      <td>{{ rz(t.oncelik) }}</td>
+      <td><small>{{ trt(t.termin) or '–' }}</small></td>
+      <td class="s {{ 'neg' if (t.kalan_gun or 0) < 0 }}">{{ t.kalan_gun if t.kalan_gun is not none else '' }}</td>
+      <td>{{ rz(t.durum) }}</td>
+      <td style="max-width:240px"><small class="soluk">{{ (t.yanit or '')[:90] }}</small></td>
+      {% if ku.rol=='admin' %}<td style="white-space:nowrap"><form class="satir" method="post" action="{{ url_for('talep_durum', tid=t.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="geri" value="{{ request.full_path }}">
+        <select name="durum" style="padding:4px 6px">{% for x in H.TALEP_DURUMLARI %}<option {{ 'selected' if t.durum==x }}>{{ x }}</option>{% endfor %}</select>
+        <button class="btn kucuk">Kaydet</button></form></td>{% endif %}
+    </tr>
+    {% else %}<tr><td colspan="9" class="bos">{% if ku.rol=='saha' %}Açık işiniz yok. Bölge müdüründen onay, karar ya da destek beklediğiniz bir konu varsa <a href="{{ url_for('talep_yeni') }}">iş atayın</a>.{% else %}Saha müdürlerinden bekleyen iş yok.{% endif %}</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

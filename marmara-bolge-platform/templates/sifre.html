@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block baslik %}Şifre{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Şifre belirle</h1><small>{% if ku.sifre_degismeli %}İlk girişiniz — devam etmek için kendi şifrenizi belirleyin.{% else %}Şifrenizi değiştirin.{% endif %}</small></div></div>
+<div class="kart" style="max-width:460px"><div class="kart-ic">
+<form method="post"><input type="hidden" name="_csrf" value="{{ csrf() }}">
+<div class="alan" style="margin-bottom:12px"><label>Mevcut şifre</label><input type="password" name="eski" required autocomplete="current-password"></div>
+<div class="alan" style="margin-bottom:12px"><label>Yeni şifre</label><input type="password" name="yeni" required minlength="8" autocomplete="new-password"><span class="ipucu">En az 8 karakter, harf ve rakam içermeli.</span></div>
+<div class="alan" style="margin-bottom:12px"><label>Yeni şifre (tekrar)</label><input type="password" name="yeni2" required minlength="8" autocomplete="new-password"></div>
+<div class="form-alt"><button class="btn ana">Kaydet</button></div>
+</form></div></div>{% endblock %}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block baslik %}Marmara Bölge{% endblock %} · Yönetim Platformu</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+{% set ep = request.endpoint or '' %}
+<div class="mobil-ust"><button id="menu-ac" aria-label="Menü">☰</button><b>Marmara Bölge</b></div>
+<div class="duzen">
+  <aside class="kenar">
+    <div class="marka"><b>MARMARA BÖLGE</b><span>Güzel Enerji · Yönetim Platformu</span></div>
+    <nav class="menu">
+      <a href="{{ url_for('pano') }}" class="{{ 'aktif' if ep=='pano' }}"><span class="ik">▣</span>Pano</a>
+      <div class="baslik">Takip</div>
+      <a href="{{ url_for('projeler') }}" class="{{ 'aktif' if ep.startswith('proje') or ep=='gelisme_ekle' }}"><span class="ik">◧</span>Projeler</a>
+      <a href="{{ url_for('ziyaretler') }}" class="{{ 'aktif' if ep.startswith('ziyaret') }}"><span class="ik">◎</span>İstasyon Ziyaretleri</a>
+      <a href="{{ url_for('aksakliklar') }}" class="{{ 'aktif' if ep.startswith('aksaklik') }}"><span class="ik">⚑</span>Aksaklıklar</a>
+      {% if ku and ku.rol in ('admin','saha') %}<a href="{{ url_for('talepler') }}" class="{{ 'aktif' if ep.startswith('talep') }}"><span class="ik">➜</span>{{ "Saha'dan Gelen İşler" if ku.rol=='admin' else 'Bölge Müdürüne İşler' }}{% if yeni_is %}<span class="rozet-say" title="Yeni iş">{{ yeni_is }}</span>{% endif %}</a>{% endif %}
+      <div class="baslik">Bölge Analizi</div>
+      <a href="{{ url_for('kredi_risk') }}" class="{{ 'aktif' if ep=='kredi_risk' }}"><span class="ik">₺</span>Kredi-Risk</a>
+      <a href="{{ url_for('bayiler') }}" class="{{ 'aktif' if ep.startswith('bayi') }}"><span class="ik">▤</span>Bayi Portföyü</a>
+      <a href="{{ url_for('mintika') }}" class="{{ 'aktif' if ep=='mintika' }}"><span class="ik">◫</span>Mıntıka Analizi</a>
+      <a href="{{ url_for('pazar_payi') }}" class="{{ 'aktif' if ep=='pazar_payi' }}"><span class="ik">◔</span>Pazar Payı</a>
+      <div class="baslik">Diğer</div>
+      <a href="{{ url_for('kilavuz') }}" class="{{ 'aktif' if ep=='kilavuz' }}"><span class="ik">?</span>Kılavuz</a>
+      {% if not salt_okunur %}<a href="{{ url_for('disa_aktar') }}"><span class="ik">⤓</span>Excel'e Aktar</a>{% endif %}
+      {% if ku and ku.rol == 'admin' %}
+      <div class="baslik">Yönetim</div>
+      <a href="{{ url_for('kullanicilar') }}" class="{{ 'aktif' if ep=='kullanicilar' }}"><span class="ik">◉</span>Kullanıcılar{% if bekleyen_kayit %}<span class="rozet-say" title="Onay bekleyen kayıt">{{ bekleyen_kayit }}</span>{% endif %}</a>
+      <a href="{{ url_for('islem_gecmisi') }}" class="{{ 'aktif' if ep=='islem_gecmisi' }}"><span class="ik">≡</span>İşlem Geçmişi</a>
+      <a href="{{ url_for('yedek') }}"><span class="ik">⛁</span>Veritabanı Yedeği</a>
+      {% endif %}
+    </nav>
+    {% if test_modu %}
+    <div class="test-kutu">
+      <b>TEST MODU</b><span>Giriş ekranı kapalı</span>
+      <form method="get" id="test-sec"><label for="test-k">Kullanıcı</label>
+        <select id="test-k" name="k" data-git="{{ url_for('test_kullanici', kid=0) }}">
+        {% for t in test_kullanicilar %}<option value="{{ t.id }}" {{ 'selected' if ku and ku.id==t.id }}>{{ ROL_ADI.get(t.rol, t.rol) }}{{ ' · ' ~ t.sm_kodu if t.rol=='saha' }} — {{ t.ad_soyad }}</option>{% endfor %}
+        </select></form>
+    </div>
+    {% endif %}
+    {% if ku %}
+    <div class="kul"><b>{{ ku.ad_soyad }}</b>
+      <span class="soluk" style="color:#B9C6E0">{{ ROL_ADI[ku.rol] }}{{ ' · ' ~ ku.sm_kodu if ku.rol=='saha' }}{{ ' · salt okunur' if salt_okunur }}</span><br>
+      {% if not test_modu %}<a href="{{ url_for('sifre_degistir') }}">Şifre</a><a href="{{ url_for('cikis') }}">Çıkış</a>{% endif %}</div>
+    {% endif %}
+  </aside>
+  <main class="icerik">
+    {% if test_modu %}<div class="mesaj uyari" style="margin-bottom:12px"><b>Test modu açık:</b> giriş ekranı atlanıyor ve platform {{ ku.ad_soyad }} ({{ ROL_ADI.get(ku.rol, ku.rol) }}) olarak açılıyor. Soldaki kutudan başka bir kullanıcıyla deneyebilirsiniz. Canlıya alırken başlatma dosyasındaki <span class="kod">TEST_MODU</span> satırını 0 yapın.</div>{% endif %}
+    {% if salt_okunur %}<div class="mesaj bilgi" style="margin-bottom:12px">Ziyaretçi olarak görüntülüyorsunuz — tüm bölgeyi inceleyebilir, ancak kayıt ekleyemez veya değiştiremezsiniz.</div>{% endif %}
+    {% with ms = get_flashed_messages(with_categories=true) %}{% if ms %}
+    <div class="mesajlar">{% for k, m in ms %}<div class="mesaj {{ k }}">{{ m }}</div>{% endfor %}</div>
+    {% endif %}{% endwith %}
+    {% block icerik %}{% endblock %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

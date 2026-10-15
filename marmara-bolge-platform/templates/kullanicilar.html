@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block baslik %}Kullanıcılar{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Kullanıcılar</h1><small>Şifreler şifrelenmiş (hash) saklanır; kimse — bölge müdürü dahil — mevcut bir şifreyi göremez, yalnızca sıfırlayabilir.</small></div></div>
+{% if yeni_sifre %}<div class="mesaj uyari"><b>{{ yeni_sifre[0] }}</b> için geçici şifre: <span class="kod" style="font-size:14px">{{ yeni_sifre[1] }}</span> — bu şifre yalnızca şimdi gösterilir. Kullanıcı ilk girişte kendi şifresini belirlemek zorunda kalacak.</div>{% endif %}
+{% if bekleyenler %}
+<div class="kart" style="border-left:4px solid var(--turuncu)"><div class="kart-bas"><h2>Onay bekleyen kayıtlar ({{ bekleyenler|length }})</h2><small>Saha müdürü seçilen mıntıkanın kayıtlarını düzenleyebilir — mıntıkayı kontrol edin. Ziyaretçi yalnızca görüntüler.</small></div>
+<div class="tablo-kap"><table>
+<tr><th>Ad soyad</th><th>Kullanıcı adı</th><th>Seçtiği mıntıka</th><th>Başvuru</th><th>Onayla</th><th></th></tr>
+{% for k in bekleyenler %}<tr>
+  <td><b>{{ k.ad_soyad }}</b></td><td><span class="kod">{{ k.kullanici_adi }}</span></td>
+  <td>{% if k.rol=='ziyaretci' %}<span class="rz gri">Ziyaretçi</span> <small>salt okunur</small>{% else %}{{ k.talep_mintika }} · {{ (k.sm_adi or '')|ad }}{% endif %}
+    {% if mevcut.get(k.talep_mintika) %}<br><small class="neg">Bu mıntıkada zaten aktif hesap var: {{ mevcut[k.talep_mintika]|join(', ') }}</small>{% endif %}</td>
+  <td><small>{{ (k.olusturma or '')[:16] }}</small></td>
+  <td><form class="satir" method="post"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="id" value="{{ k.id }}">
+    <select name="rol" style="padding:4px 6px">{% for r in ('saha','ziyaretci','admin') %}<option value="{{ r }}" {{ 'selected' if k.rol==r }}>{{ ROL_ADI[r] }}</option>{% endfor %}</select>
+    <select name="mintika" style="padding:4px 6px">{% for s, kd in H.SAHA_MUDURLERI %}<option value="{{ kd }}" {{ 'selected' if kd==k.talep_mintika }}>{{ kd }} · {{ s|ad }}</option>{% endfor %}</select>
+    <button class="btn kucuk yesil" name="islem" value="onayla">Onayla</button></form></td>
+  <td><form class="satir" method="post" data-onay="{{ k.ad_soyad }} başvurusu reddedilsin mi?"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="id" value="{{ k.id }}"><button class="btn kucuk tehlike" name="islem" value="reddet">Reddet</button></form></td>
+</tr>{% endfor %}
+</table></div></div>
+{% endif %}
+<div class="kart"><div class="tablo-kap"><table>
+<tr><th>Kullanıcı adı</th><th>Ad soyad</th><th>Rol</th><th>Mıntıka</th><th>Son giriş</th><th>Durum</th><th></th></tr>
+{% for k in kullanicilar %}<tr class="{{ 'tamam' if not k.aktif }}">
+  <td><span class="kod">{{ k.kullanici_adi }}</span></td><td>{{ k.ad_soyad }}</td><td>{{ ROL_ADI[k.rol] }}</td>
+  <td><small>{{ k.sm_kodu }} {{ k.sm_adi or '' }}</small></td><td><small>{{ k.son_giris or 'hiç giriş yapmadı' }}</small></td>
+  <td>{% if k.onay_durumu=='reddedildi' %}<span class="rz kirmizi">Reddedildi</span>{% elif not k.aktif %}<span class="rz gri">Pasif</span>{% elif k.sifre_degismeli %}<span class="rz sari">İlk şifre bekliyor</span>{% else %}<span class="rz yesil">Aktif</span>{% endif %}</td>
+  <td style="white-space:nowrap">
+    <form class="satir" method="post" data-onay="{{ k.kullanici_adi }} için yeni geçici şifre üretilsin mi?"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="id" value="{{ k.id }}"><button class="btn kucuk" name="islem" value="sifirla">Şifre sıfırla</button></form>
+    {% if k.id != ku.id %}<form class="satir" method="post"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="id" value="{{ k.id }}"><button class="btn kucuk" name="islem" value="aktiflik">{{ 'Pasif yap' if k.aktif else 'Aktif yap' }}</button></form>{% endif %}
+  </td></tr>{% endfor %}
+</table></div></div>
+<form class="kart" method="post"><div class="kart-bas"><h2>Yeni kullanıcı</h2></div><div class="kart-ic">
+<input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="islem" value="yeni">
+<div class="form-izgara">
+  <div class="alan"><label class="zorunlu">Kullanıcı adı</label><input name="kullanici_adi" required pattern="[A-Za-z0-9]+" placeholder="yalnızca harf ve rakam"></div>
+  <div class="alan"><label class="zorunlu">Ad soyad</label><input name="ad_soyad" required></div>
+  <div class="alan"><label>Rol</label><select name="rol"><option value="saha">Saha Müdürü</option><option value="ziyaretci">Ziyaretçi (salt okunur)</option><option value="admin">Bölge Müdürü (yönetici)</option></select></div>
+  <div class="alan"><label>Mıntıka (saha müdürü için)</label><select name="sm_adi"><option value="">—</option>{% for s in H.SM_ADLARI %}<option value="{{ s }}">{{ H.SM_KOD[s] }} · {{ s }}</option>{% endfor %}</select><span class="ipucu">Mıntıka değişikliğinde yeni kullanıcı açıp eskisini pasif yapın.</span></div>
+</div><div class="form-alt"><button class="btn ana">Oluştur ve geçici şifre üret</button></div></div></form>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block baslik %}İşlem Geçmişi{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>İşlem Geçmişi</h1><small>Son 400 işlem · kim, ne zaman, neyi değiştirdi</small></div></div>
+<div class="kart"><div class="tablo-kap"><table>
+<tr><th>Zaman</th><th>Kullanıcı</th><th>İşlem</th><th>Kayıt</th><th>Detay</th></tr>
+{% for k in kayitlar %}<tr><td><small>{{ k.zaman }}</small></td><td><span class="kod">{{ k.kullanici }}</span></td><td>{{ k.islem }}</td>
+<td>{% if k.varlik=='proje' and k.varlik_id %}<a class="kod" href="{{ url_for('proje_kart', pid=k.varlik_id) }}">{{ k.varlik_id }}</a>{% else %}<small>{{ k.varlik }} {{ k.varlik_id or '' }}</small>{% endif %}</td>
+<td><small>{{ k.detay or '' }}</small></td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

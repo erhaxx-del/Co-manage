@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}İş #{{ t.id }}{% endblock %}
+{% block icerik %}
+<div class="ust">
+  <div><small><a href="{{ url_for('talepler') }}">{{ "Saha'dan Gelen İşler" if ku.rol=='admin' else 'Bölge Müdürüne Atadığım İşler' }}</a> › #{{ t.id }}</small>
+  <h1>{{ t.baslik }}</h1>
+  <div class="etiketler">{{ rz(t.durum) }} {{ rz(t.oncelik) }} {% if t.zaman not in ('Kapalı','Tarihsiz') %}{{ rz(t.zaman) }}{% endif %}</div></div>
+  <div class="sag">{% if ku.rol=='saha' and t.durum not in ('Tamamlandı','Reddedildi') %}<a class="btn" href="{{ url_for('talep_duzenle', tid=t.id) }}">Düzenle / geri çek</a>{% endif %}</div>
+</div>
+<div class="izgara yan">
+<div>
+<div class="kart"><div class="kart-ic">
+  <div class="kunye">
+    <div><span>Atayan</span><b>{{ H.SM_KOD.get(t.sm_adi,'') }} · {{ t.sm_adi|ad }}</b></div>
+    <div><span>Açılış</span><b>{{ trt((t.olusturma or '')[:10]) }}</b></div>
+    <div><span>İstenen tarih</span><b>{{ trt(t.termin) or '–' }}</b>{% if t.kalan_gun is not none %} <small class="{{ 'neg' if t.kalan_gun < 0 }}">({{ t.kalan_gun }} gün)</small>{% endif %}</div>
+    <div><span>Departman</span><b>{{ t.departman or '–' }}</b></div>
+    <div><span>Bayi</span><b>{% if t.bayi_id %}<a href="{{ url_for('bayi_kart', bid=t.bayi_id) }}">{{ t.il }} · {{ t.unvan }}</a>{% else %}–{% endif %}</b></div>
+    <div><span>İlgili proje</span><b>{% if proje %}<a href="{{ url_for('proje_kart', pid=proje.id) }}"><span class="kod">{{ proje.id }}</span> {{ proje.ad }}</a>{% else %}–{% endif %}</b></div>
+    {% if t.tamamlanma %}<div><span>Tamamlanma</span><b>{{ trt(t.tamamlanma) }}</b></div>{% endif %}
+  </div>
+  {% if t.aciklama %}<p style="margin:14px 0 0;white-space:pre-line">{{ t.aciklama }}</p>{% endif %}
+  {% if t.yanit %}<div class="bilgi-kutu" style="margin-top:12px"><b>Bölge müdürü yanıtı:</b> {{ t.yanit }}</div>{% endif %}
+</div></div>
+{% if ku.rol=='admin' %}
+<form class="kart" method="post" action="{{ url_for('talep_durum', tid=t.id) }}"><div class="kart-bas"><h2>Durumu güncelle</h2></div><div class="kart-ic">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  <div class="form-izgara">
+    <div class="alan"><label>Durum</label><select name="durum">{% for x in H.TALEP_DURUMLARI %}<option {{ 'selected' if t.durum==x }}>{{ x }}</option>{% endfor %}</select></div>
+    <div class="alan genis"><label>Yanıtınız</label><textarea name="yanit" placeholder="Karar, açıklama veya saha müdürüne talimat…">{{ t.yanit or '' }}</textarea></div>
+  </div>
+  <div class="form-alt"><button class="btn ana">Kaydet</button></div>
+</div></form>
+{% endif %}
+</div>
+<div class="kart" id="notlar"><div class="kart-bas"><h2>Yazışma</h2><small>{{ notlar|length }} not</small></div><div class="kart-ic">
+  <ol class="not-akisi">
+  {% for n in notlar %}<li class="{{ n.rol }}"><small><b>{{ n.yazan_ad }}</b> · {{ (n.zaman or '')[:16].replace('T',' ') }}</small>{{ n.metin }}</li>
+  {% else %}<li class="bos" style="background:none">Henüz not yok.</li>{% endfor %}
+  </ol>
+  {% if t.durum not in ('Tamamlandı','Reddedildi') or ku.rol=='admin' %}
+  <form method="post" action="{{ url_for('talep_not', tid=t.id) }}" style="margin-top:10px">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <div class="alan"><textarea name="metin" required maxlength="2000" placeholder="Not yazın…"></textarea></div>
+    <div class="form-alt" style="padding:8px 0 0"><button class="btn ana kucuk">Gönder</button></div>
+  </form>{% endif %}
+</div></div>
+</div>
+{% endblock %}

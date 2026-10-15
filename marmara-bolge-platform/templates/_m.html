@@ -1,0 +1,8 @@
+{% macro rz(v) %}{% if v %}<span class="rz {{ rozet(v) }}">{{ v }}</span>{% endif %}{% endmacro %}
+{% macro bar(v, yesil=False) %}<div class="bar {{ 'yesil' if yesil }}" title="%{{ (v*100)|round|int }}"><i style="width:{{ ((v or 0)*100)|round(1) }}%"></i></div>{% endmacro %}
+{% macro sirali(ad, etiket, sirala, yon, f) -%}
+{%- set yeni_yon = 'artan' if (sirala==ad and yon=='azalan') else ('azalan' if sirala==ad else 'artan') -%}
+<a href="?{% for k,v in f.items() if v %}{{k}}={{v|urlencode}}&{% endfor %}sirala={{ad}}&yon={{yeni_yon}}">{{ etiket }}{% if sirala==ad %} {{ '▲' if yon=='artan' else '▼' }}{% endif %}</a>
+{%- endmacro %}
+{% macro csrf_input() %}<input type="hidden" name="_csrf" value="{{ csrf() }}">{% endmacro %}
+{% macro sm_kisa(s) %}{{ H.SM_KOD.get(s,'') }} · {{ (s or '')|ad }}{% endmacro %}

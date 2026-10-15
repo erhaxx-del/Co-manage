@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block baslik %}Mıntıka Analizi{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Mıntıka Analizi</h1><small>Saha müdürü bölgelerinin büyüklük, hacim, kârlılık ve aksaklık karşılaştırması · bulgu sayıları canlıdır (yalnızca açık bulgular)</small></div></div>
+{% set satirlar = [
+ ('Portföy büyüklüğü', None, None),
+ ('İstasyon sayısı','istasyon','n'), ('Faaliyet gösterdiği il','il','n'), ('Faaliyet gösterdiği ilçe','ilce','n'),
+ ('TotalEnergies istasyonu','total','n'), ('MOİL istasyonu','moil','n'), ('DODO tipi','dodo','n'), ('Otogazlı istasyon','otogazli','n'),
+ ('Hacim (Ağustos 2026)', None, None),
+ ('Toplam hacim (m³)','hacim','n'), ('Günlük ortalama (m³)','gunluk','n'), ('İstasyon başına aylık hacim (m³)','ist_basi','n'),
+ ('En büyük bayi hacmi (m³)','en_buyuk','n'), ('En büyük bayinin payı','en_buyuk_pay','p'), ('A segmenti istasyon','a_seg','n'), ('Bölge hacmindeki payı','bolge_payi','p'),
+ ('Kârlılık (2026 Ocak–Temmuz)', None, None),
+ ('YTD hacim (m³)','ytd26','n'), ('YTD final kâr (mn TL)','kar','m'), ('Kâr (TL/m³)','kar_m3','n'), ('Zarar eden istasyon','zarar_n','n'),
+ ('Zarar tutarı (mn TL)','zarar_tl','m'), ('Yıllık hacim değişimi','yoy','p'),
+ ('Aksaklık göstergeleri', None, None),
+ ("Ağustos'ta hiç satış yapmayan",'hic_satis','n'), ('Sıfır satış günü olan','sifir_gunlu','n'), ('Yıllık hacmi %15+ düşen','dusen','n'),
+ ('Açık kritik bulgu','kritik','n'), ('Açık yüksek bulgu','yuksek','n'), ('Açık orta bulgu','orta','n'), ('Toplam açık bulgu','bulgu','n'), ('İstasyon başına bulgu','ist_bulgu','d')] %}
+<div class="kart"><div class="tablo-kap"><table>
+  <tr><th>Ölçüt</th>{% for r in m %}<th class="s">{{ r.sm if r.sm=='BÖLGE' else H.SM_KOD[r.sm] ~ ' ' ~ r.sm.split(' ')[0]|ad }}</th>{% endfor %}</tr>
+  {% for et, k, t in satirlar %}
+    {% if not k %}<tr><td colspan="{{ m|length + 1 }}" style="background:#EEF2F8;font-weight:700;color:var(--lacivert);font-size:12px;text-transform:uppercase;letter-spacing:.5px">{{ et }}</td></tr>
+    {% else %}<tr><td>{{ et }}</td>{% for r in m %}{% set v = r[k] %}
+      <td class="s {{ 'neg' if (t in ('m','p') and v < 0) }}" style="{{ 'font-weight:700;background:#F2F5FA' if r.sm=='BÖLGE' }}">
+      {%- if t=='p' %}{{ yuzde(v) }}{% elif t=='m' %}{{ sayi(v/1e6,1) }}{% elif t=='d' %}{{ sayi(v,2) }}{% else %}{{ sayi(v) }}{% endif -%}</td>{% endfor %}</tr>{% endif %}
+  {% endfor %}
+</table></div></div>
+<div class="kart"><div class="kart-bas"><h2>Öne çıkan bulgular (Eylül 2026 analizi)</h2></div><div class="kart-ic not-blok">
+<p><b>Mıntıka büyüklüğü istasyon sayısıyla değil hacimle ölçülmeli.</b> İstasyon sayısı 28–43 arasında değişirken istasyon başına aylık hacim 242–471 m³ arasında — yaklaşık iki kat fark. En az istasyonlu Ozan Selbuz mıntıkası verimlilikte ve m³ kârlılığında birinci.</p>
+<p><b>Bölge kârlılığı tek bir masraf merkezinin gölgesinde.</b> TSK Mehmetçik Vakfı Kurtköy-1 masraf merkezi −312,5 mn TL ile bölgedeki toplam zararın %86'sını taşıyor. Zarar ticari marjdan değil, direkt operasyonel gider ve kiradan kaynaklanıyor; Kurtköy-2 ve -3'ün P&L'i de bu merkezde birleşmiş durumda.</p>
+<p><b>Salih Kosif mıntıkası: yüksek hacim, düşük kâr.</b> Bölgenin en büyük Ağustos hacmini üretmesine rağmen m³ kârlılığında sondan ikinci ve yıllık hacmi küçülen tek mıntıka.</p>
+<p><b>Yedi istasyon Ağustos boyunca hiç satış yapmadı</b> — Karacabey'de iki, İzmit, Karesi, Sındırgı, Babaeski ve Malkara. Statüleri netleştirilmeli.</p>
+<p><b>Veri kalitesi:</b> pompa raporunda üç istasyonun ili hatalı ("İsranbul", "Kocaeli̇", Kırklareli yerine "Kırıkkale"); pompa ve gelir tablosu raporlarının hacim bazı farklı (ayda ~76 bin m³ / ~228 bin m³). Hacim karşılaştırmaları tek kaynak içinde yapılmalı.</p>
+</div></div>
+{% endblock %}

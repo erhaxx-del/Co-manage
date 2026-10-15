@@ -1,0 +1,144 @@
+{% extends "base.html" %}{% from "_m.html" import rz, bar, sm_kisa with context %}
+{% block baslik %}Pano{% endblock %}
+{% block icerik %}
+<div class="ust">
+  <div><h1>Marmara Bölgesi İş Takip Panosu</h1>
+  <small>{{ trt(bugun, True) }} · Bölge Müdürü: Erhan Başaçar · 6 saha müdürü · 227 bayi</small></div>
+  {% if not salt_okunur %}<div class="sag"><a class="btn ana" href="{{ url_for('proje_yeni') }}">+ Yeni proje</a><a class="btn" href="{{ url_for('ziyaret_yeni') }}">+ Ziyaret planla</a>{% if ku.rol=='saha' %}<a class="btn" href="{{ url_for('talep_yeni') }}">+ Bölge müdürüne iş ata</a>{% endif %}</div>{% endif %}
+</div>
+
+{% if benim %}
+<div class="kart" style="border-left:4px solid var(--lacivert2)">
+  <div class="kart-bas"><h2>Benim listem — {{ ku.ad_soyad }}</h2><small>{{ ku.sm_kodu }}</small></div>
+  <div class="kart-ic izgara uc">
+    <div><h3>Geciken ({{ benim.geciken|length }})</h3>
+      {% for p in benim.geciken %}<div><a href="{{ url_for('proje_kart', pid=p.id) }}"><span class="kod">{{ p.id }}</span> {{ p.ad }}</a> <small class="neg">{{ p.gecikme }} gün</small></div>{% else %}<small>Geciken projeniz yok.</small>{% endfor %}</div>
+    <div><h3>Bu hafta termin ({{ benim.hafta|length }})</h3>
+      {% for p in benim.hafta %}<div><a href="{{ url_for('proje_kart', pid=p.id) }}"><span class="kod">{{ p.id }}</span> {{ p.ad }}</a> <small>{{ trt(p.termin) }}</small></div>{% else %}<small>Bu hafta terminli proje yok.</small>{% endfor %}
+      {% if benim.sessiz %}<h3 style="margin-top:12px">14+ gündür gelişme yok ({{ benim.sessiz|length }})</h3>
+      {% for p in benim.sessiz %}<div><a href="{{ url_for('proje_kart', pid=p.id) }}"><span class="kod">{{ p.id }}</span> {{ p.ad }}</a> <small>{{ p.temassiz }} gün</small></div>{% endfor %}{% endif %}</div>
+    <div><h3>Bu haftaki ziyaretlerim ({{ benim.ziyaret|length }})</h3>
+      {% for z in benim.ziyaret %}<div>{{ rz(z.zaman) if z.zaman=='Gecikmiş Plan' }} <small>{{ trt(z.tarih) }}</small> <a href="{{ url_for('ziyaret_duzenle', zid=z.id) }}">{{ z.ilce }} · {{ (z.unvan or '')[:34] }}</a></div>{% else %}<small>Plan yok — <a href="{{ url_for('ziyaret_yeni') }}">ziyaret planlayın</a>.</small>{% endfor %}</div>
+  </div>
+</div>
+{% endif %}
+
+{% if talep and (talep.acik or ku.rol=='admin') %}
+<div class="kart" style="border-left:4px solid var(--turuncu)">
+  <div class="kart-bas"><h2>{{ "Saha'dan gelen işler" if ku.rol=='admin' else 'Bölge müdürüne atadığım işler' }}</h2>
+    <small>{{ talep.acik }} açık{% if talep.yeni %} · <b>{{ talep.yeni }} yeni</b>{% endif %}{% if talep.geciken %} · <span class="neg">{{ talep.geciken }} geciken</span>{% endif %} · <a href="{{ url_for('talepler') }}">tümü →</a></small></div>
+  <div class="kart-ic is-listesi">
+    {% for t in talep.liste %}<div class="is">{{ rz(t.durum) }}<div class="b"><a href="{{ url_for('talep_kart', tid=t.id) }}"><b>{{ t.baslik }}</b></a><br><small>{% if ku.rol=='admin' %}{{ H.SM_KOD.get(t.sm_adi,'') }} · {{ t.sm_adi|ad }} · {% endif %}{{ t.oncelik }}{% if t.termin %} · {{ trt(t.termin) }}{% endif %}{% if t.kalan_gun is not none and t.kalan_gun < 0 %} · <span class="neg">{{ -t.kalan_gun }} gün gecikti</span>{% endif %}</small></div></div>
+    {% else %}<small class="soluk">Saha müdürlerinden bekleyen iş yok.</small>{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="kpiler">
+  <div class="kpi"><div class="e">Açık proje</div><div class="d">{{ kpi.acik }}</div><div class="a">devam eden + bekleyen</div></div>
+  <div class="kpi kirmizi"><div class="e">Geciken</div><div class="d">{{ kpi.geciken }}</div><div class="a">termini geçmiş</div></div>
+  <div class="kpi turuncu"><div class="e">Bu hafta termin</div><div class="d">{{ kpi.bu_hafta }}</div><div class="a">7 gün içinde</div></div>
+  <div class="kpi"><div class="e">Tamamlanma</div><div class="d">{{ yuzde(kpi.tamam_oran) }}</div><div class="a">tüm projeler</div></div>
+  <div class="kpi"><div class="e">Bu hafta ziyaret</div><div class="d">{{ kpi.z_hafta }}</div><div class="a">planlı istasyon ziyareti</div></div>
+  <div class="kpi {{ 'kirmizi' if kpi.z_gecikmis }}"><div class="e">Gecikmiş ziyaret</div><div class="d">{{ kpi.z_gecikmis }}</div><div class="a">tarihi geçmiş plan</div></div>
+  <div class="kpi {{ 'kirmizi' if kpi.pp_bp < 0 else 'yesil' }}"><div class="e">Pazar payı</div><div class="d">{{ yuzde(kpi.pp26, 2) }}</div><div class="a">{{ bp(kpi.pp_bp) }} · Oca–Tem</div></div>
+  <div class="kpi kirmizi"><div class="e">Vadesi geçmiş</div><div class="d">{{ bin_tl(kpi.vadesi_gecmis) }}</div><div class="a">TL · {{ kpi.borclu }} bayi{% if kpi.borc_fark %} · {{ H.fark_tl(kpi.borc_fark) }}{% endif %}</div></div>
+  <div class="kpi kirmizi"><div class="e">31 gün + eskiyen</div><div class="d">{{ bin_tl(kpi.eskiyen) }}</div><div class="a">TL · tahsilat riski</div></div>
+  <div class="kpi kirmizi"><div class="e">Kritik bulgu</div><div class="d">{{ kpi.kritik_bulgu }}</div><div class="a">açık aksaklık</div></div>
+</div>
+
+<div class="kart">
+  <div class="kart-bas"><h2>Saha müdürü performansı</h2><small>Satırlara tıklayarak ilgili projelere gidebilirsiniz</small></div>
+  <div class="tablo-kap"><table>
+    <tr><th>Saha müdürü</th><th class="s">Toplam</th><th class="s">Açık</th><th class="s">Geciken</th><th>Tamamlanma</th><th class="s">İlerleme</th><th class="s">Bu hafta</th><th class="s">Krit./Yük.</th><th class="s" title="Son 7 günde girilen gelişme kaydı">Gelişme 7g</th><th class="s" title="14 gündür gelişme yazılmamış açık proje">Sessiz 14g+</th><th class="s">Ziyaret/hf</th><th class="s">Gecikmiş ziy.</th><th class="s">Pazar payı</th><th class="s">Δ pay</th><th class="s" title="Vadesi geçmiş borç (TL)">Vadesi geçmiş</th><th class="s" title="31 gün ve üzeri eskiyen borç">Eskiyen</th></tr>
+    {% for r in sm_tablo %}
+    <tr class="{{ 'vurgu' if ku.sm_adi == r.sm }}">
+      <td class="ad-h"><span class="kod">{{ r.kod }}</span> <a href="{{ url_for('projeler', sm=r.sm, acik=1) }}"><b>{{ r.sm|ad }}</b></a></td>
+      <td class="s">{{ r.toplam }}</td><td class="s">{{ r.acik }}</td>
+      <td class="s">{% if r.geciken %}<a class="neg" href="{{ url_for('projeler', sm=r.sm, zaman='Geciken') }}"><b>{{ r.geciken }}</b></a>{% else %}0{% endif %}</td>
+      <td>{{ bar(r.tamam_oran, True) }}<small>{{ yuzde(r.tamam_oran,0) }}</small></td>
+      <td class="s">{{ yuzde(r.ilerleme,0) }}</td>
+      <td class="s">{{ r.bu_hafta }}</td><td class="s">{{ r.kritik }}</td>
+      <td class="s">{{ r.gel7 }}</td>
+      <td class="s">{% if r.sessiz %}<span class="neg"><b>{{ r.sessiz }}</b></span>{% else %}0{% endif %}</td>
+      <td class="s">{% if r.z_hafta %}{{ r.z_hafta }}{% else %}<span class="rz turuncu">0</span>{% endif %}</td>
+      <td class="s">{% if r.z_gecikmis %}<span class="neg"><b>{{ r.z_gecikmis }}</b></span>{% else %}0{% endif %}</td>
+      <td class="s">{{ yuzde(r.pp26, 2) }}</td>
+      <td class="s {{ 'neg' if r.pp_bp < 0 else 'poz' }}">{{ bp(r.pp_bp) }}</td>
+      <td class="s {{ 'neg' if r.vadesi_gecmis }}">{{ bin_tl(r.vadesi_gecmis) if r.vadesi_gecmis else '–' }}</td>
+      <td class="s {{ 'neg' if r.eskiyen }}">{{ bin_tl(r.eskiyen) if r.eskiyen else '–' }}</td>
+    </tr>{% endfor %}
+  </table></div>
+</div>
+
+<div class="izgara yan">
+  <div class="kart">
+    <div class="kart-bas"><h2>Öncelikli 15 iş</h2><a class="btn kucuk" href="{{ url_for('projeler', acik=1) }}">Tümü →</a></div>
+    <div class="tablo-kap"><table>
+      <tr><th>Proje</th><th>Saha müdürü</th><th>Öncelik</th><th>Termin</th><th class="s">Kalan</th><th>Durum</th></tr>
+      {% for p in oncelikli %}
+      <tr class="{{ 'gecik' if p.zaman=='Geciken' }}"><td><a href="{{ url_for('proje_kart', pid=p.id) }}"><span class="kod">{{ p.id }}</span> {{ p.ad }}</a></td>
+        <td><small>{{ p.sm_adi }}</small></td><td>{{ rz(p.oncelik) }}</td><td><small>{{ trt(p.termin) }}</small></td>
+        <td class="s {{ 'neg' if (p.kalan_gun or 0) < 0 }}">{{ p.kalan_gun }}</td><td>{{ rz(p.zaman) }}</td></tr>
+      {% endfor %}
+    </table></div>
+  </div>
+  <div class="kart">
+    <div class="kart-bas"><h2>Bu haftanın ziyaret planı</h2><a class="btn kucuk" href="{{ url_for('ziyaretler') }}">Takvim →</a></div>
+    <div class="kart-ic">
+      {% if gecikmis_z %}<div class="mesaj hata" style="margin-bottom:10px">{{ gecikmis_z|length }} ziyaret planının tarihi geçti ve hâlâ "Planlandı" görünüyor.</div>{% endif %}
+      {% for g in hafta %}
+      <div style="margin-bottom:10px"><h3 style="{{ 'color:var(--mavi)' if g.bugun }}">{{ g.ad }} · {{ trt(g.gun) }} ({{ g.ziyaretler|length }})</h3>
+        {% for z in g.ziyaretler %}<div style="font-size:12.5px;margin-bottom:3px">{{ rz('Gerçekleşti') if z.durum=='Gerçekleşti' }}
+          <b>{{ H.SM_KOD.get(z.sm_adi) }}</b> · <a href="{{ url_for('bayi_kart', bid=z.bayi_id) }}">{{ z.ilce }} – {{ (z.unvan or '')[:30] }}</a>{% if z.segment=='A' %}<span class="seg A">A</span>{% endif %} <small>· {{ z.amac }}</small></div>
+        {% else %}<small>Plan yok</small>{% endfor %}
+      </div>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="izgara iki">
+  <div class="kart">
+    <div class="kart-bas"><h2>Risk ısı haritası</h2><small>3×geciken + 2×açık kritik + 1×bu hafta</small></div>
+    <div class="tablo-kap"><table class="isi">
+      <tr><th>Saha müdürü</th>{% for dp in H.DEPARTMANLAR %}<th class="o" title="{{ dp }}">{{ dp.split(' ')[0][:9] }}</th>{% endfor %}</tr>
+      {% for s, sat in isi.items() %}<tr><td class="ad">{{ H.SM_KOD[s] }} {{ s.split(' ')[0]|ad }}</td>
+        {% for dp in H.DEPARTMANLAR %}{% set v = sat[dp] %}
+        <td style="background:{{ '#FFFFFF' if v==0 else ('#FFF3C4' if v<3 else ('#F8C28F' if v<6 else '#E57373')) }}">{% if v %}<a style="color:inherit" href="{{ url_for('projeler', sm=s, dep=dp, acik=1) }}">{{ v }}</a>{% else %}<span class="soluk">·</span>{% endif %}</td>{% endfor %}</tr>{% endfor %}
+    </table></div>
+  </div>
+  <div class="kart">
+    <div class="kart-bas"><h2>Açık ve geciken projeler</h2></div>
+    <div class="kart-ic" style="height:260px"><canvas data-grafik="sm-acik" data-veri="grafik-veri"></canvas></div>
+  </div>
+</div>
+
+<div class="izgara iki">
+  <div class="kart">
+    <div class="kart-bas"><h2>Tamamlanma oranı</h2></div>
+    <div class="kart-ic" style="height:240px"><canvas data-grafik="sm-tamam" data-veri="grafik-veri"></canvas></div>
+  </div>
+  <div class="kart">
+    <div class="kart-bas"><h2>Pazar payı — 2025 / 2026</h2><a class="btn kucuk" href="{{ url_for('pazar_payi') }}">Detay →</a></div>
+    <div class="kart-ic" style="height:240px"><canvas data-grafik="sm-pp" data-veri="grafik-veri"></canvas></div>
+  </div>
+</div>
+<div class="kart">
+  <div class="kart-bas"><h2>Kredi-Risk — en yüksek vadesi geçmiş borçlar</h2>
+    <small>{{ trt(kredi.ozet.rapor_tarihi) }} raporu · onay oranı {{ yuzde(kredi.ozet.onay_oran) }} · medyan yanıt {{ H.sure_fmt(kredi.ozet.medyan_dk) }} · <a href="{{ url_for('kredi_risk') }}">tümü →</a></small></div>
+  <div class="tablo-kap"><table>
+    <tr><th>Bayi</th><th>Saha müdürü</th><th class="s">Vadesi geçmiş</th><th class="s">31 gün+</th><th class="s">Değişim</th><th>Seviye</th><th>Saha açıklaması</th></tr>
+    {% for b in kredi.borclu[:8] %}<tr class="{{ 'gecik' if b.seviye=='Kritik' }}">
+      <td>{% if b.bayi_id %}<a href="{{ url_for('bayi_kart', bid=b.bayi_id) }}">{{ b.unvan[:38] }}</a>{% else %}{{ b.unvan[:38] }}{% endif %}</td>
+      <td><small>{{ H.SM_KOD.get(b.sm_adi,'') }} · {{ b.sm_adi|ad }}</small></td>
+      <td class="s"><b>{{ bin_tl(b.vadesi_gecmis) }}</b></td>
+      <td class="s {{ 'neg' if b.eskiyen }}">{{ bin_tl(b.eskiyen) if b.eskiyen else '–' }}</td>
+      <td class="s {{ 'neg' if b.fark > 0 }}">{{ H.fark_tl(b.fark) }}</td>
+      <td>{{ rz(b.seviye) }}</td>
+      <td style="max-width:300px"><small class="soluk">{{ (b.aciklama or '')[:90] }}</small></td>
+    </tr>{% endfor %}
+  </table></div>
+</div>
+
+<script type="application/json" id="grafik-veri">{{ grafik|tojson }}</script>
+{% endblock %}

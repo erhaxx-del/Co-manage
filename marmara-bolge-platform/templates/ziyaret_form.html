@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block baslik %}{{ 'Ziyaret planla' if yeni else 'Ziyaret düzenle' }}{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>{{ 'Ziyaret planla' if yeni else 'Ziyaret düzenle' }}</h1><small>Önce saha müdürünü seçin; bayi listesi o mıntıkaya göre daralır ve seçilen bayinin segment/risk bilgisi görünür.</small></div></div>
+<form id="ziyaret-form" method="post" class="kart"><div class="kart-ic">
+<input type="hidden" name="_csrf" value="{{ csrf() }}">
+<div class="form-izgara">
+  <div class="alan"><label class="zorunlu">Planlanan tarih</label><input type="date" name="tarih" value="{{ z.tarih or '' }}" required></div>
+  <div class="alan"><label class="zorunlu" for="z_sm">Saha müdürü</label>
+    {% if ku.rol=='admin' %}<select id="z_sm" name="sm_adi" required><option value="">— seçin —</option>{% for s in H.SM_ADLARI %}<option value="{{ s }}" {{ 'selected' if z.sm_adi==s }}>{{ H.SM_KOD[s] }} · {{ s }}</option>{% endfor %}</select>
+    {% else %}<select id="z_sm" name="sm_adi"><option value="{{ ku.sm_adi }}" selected>{{ ku.sm_kodu }} · {{ ku.sm_adi }}</option></select>{% endif %}</div>
+  <div class="alan genis"><label class="zorunlu" for="bayi_id">Bayi / istasyon</label><select id="bayi_id" name="bayi_id" data-deger="{{ z.bayi_id or '' }}" required><option value="">← Önce saha müdürü seçin</option></select>
+    <div id="bayi-bilgi" class="bilgi-kutu" hidden style="margin-top:6px"></div></div>
+  <div class="alan"><label class="zorunlu">Ziyaret amacı</label><select name="amac" required><option value="">— seçin —</option>{% for x in H.ZIYARET_AMACLARI %}<option {{ 'selected' if z.amac==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label for="proje_id">İlgili proje</label><select id="proje_id" name="proje_id"><option value="">— yok —</option>{% for p in acik_projeler %}<option value="{{ p.id }}" data-sm="{{ p.sm_adi }}" {{ 'selected' if z.proje_id==p.id }}>{{ p.id }} · {{ p.ad[:50] }}</option>{% endfor %}</select></div>
+  <div class="alan"><label>Durum</label><select name="durum">{% for x in H.ZIYARET_DURUMLARI %}<option {{ 'selected' if z.durum==x }}>{{ x }}</option>{% endfor %}</select></div>
+  <div class="alan"><label>Gerçekleşen tarih</label><input type="date" name="gercek_tarih" value="{{ z.gercek_tarih or '' }}"></div>
+  <div class="alan genis"><label>Ziyaret notu</label><textarea name="notu" placeholder="Ziyaret sonrası: ne görüldü, ne konuşuldu, ne karar verildi">{{ z.notu or '' }}</textarea></div>
+  <div class="alan"><label>Sonraki ziyaret</label><input type="date" name="sonraki" value="{{ z.sonraki or '' }}"></div>
+</div>
+<div class="form-alt">
+  {% if not yeni %}<button class="btn tehlike" name="sil" value="1" formnovalidate>Ziyareti sil</button><span style="flex:1"></span>{% endif %}
+  <a class="btn" href="{{ url_for('ziyaretler') }}">Vazgeç</a><button class="btn ana">Kaydet</button></div>
+</div></form>
+{% endblock %}

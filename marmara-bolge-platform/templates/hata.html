@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block baslik %}Hata {{ kod }}{% endblock %}
+{% block icerik %}<div class="kart"><div class="kart-ic"><h1>{{ kod }}</h1><p>{{ mesaj }}</p>
+<a class="btn ana" href="{{ url_for('pano') }}">Panoya git</a></div></div>{% endblock %}

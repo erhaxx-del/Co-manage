@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}Aksaklıklar{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Aksaklıklar</h1><small>Pompa satışı ve kârlılık verisinden tespit edilen bulgular · Açık {{ sayim.get('Açık',0) }} · Projeye dönüştü {{ sayim.get('Projeye dönüştü',0) }} · Kapandı {{ sayim.get('Kapandı',0) }}</small></div></div>
+<div class="kart">
+  <form class="filtre" method="get">
+    <label>Saha müdürü<select name="sm"><option value="">Tümü</option>{% for s in H.SM_ADLARI %}<option {{ 'selected' if f.sm==s }}>{{ s }}</option>{% endfor %}</select></label>
+    <label>Önem<select name="onem"><option value="">Tümü</option>{% for x in ['Kritik','Yüksek','Orta','Bilgi'] %}<option {{ 'selected' if f.onem==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Kategori<select name="kategori"><option value="">Tümü</option>{% for x in kategoriler %}<option {{ 'selected' if f.kategori==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Durum<select name="durum"><option value="">Tümü</option>{% for x in H.AKSAKLIK_DURUMLARI %}<option {{ 'selected' if f.durum==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Ara<input name="q" value="{{ f.q }}" placeholder="bayi, bulgu, ilçe"></label><button class="btn">Uygula</button>
+  </form>
+  <div class="tablo-kap"><table>
+    <tr><th>Önem</th><th>Kategori</th><th>Bayi</th><th>Bulgu</th><th>Önerilen aksiyon</th><th>Durum</th><th></th></tr>
+    {% for a in aksakliklar %}<tr>
+      <td>{{ rz(a.onem) }}</td><td><small>{{ a.kategori }}</small></td>
+      <td>{% if a.bayi_id %}<a href="{{ url_for('bayi_kart', bid=a.bayi_id) }}">{{ (a.unvan or '')[:40] }}</a>{% else %}{{ a.unvan }}{% endif %}<br><small>{{ a.sm_adi }} · {{ a.ilce }}</small></td>
+      <td style="max-width:320px"><b>{{ a.bulgu }}</b><br><small>{{ a.detay }}</small></td>
+      <td style="max-width:260px"><small>{{ a.aksiyon }}</small><br><small class="soluk">{{ a.departman }}</small></td>
+      <td>{{ rz(a.durum) }}{% if a.proje_id %}<br><a class="kod" href="{{ url_for('proje_kart', pid=a.proje_id) }}">{{ a.proje_id }}</a>{% endif %}</td>
+      <td style="white-space:nowrap">{% if duzenleyebilir(a.sm_adi) %}
+        {% if a.durum=='Açık' %}<a class="btn kucuk" href="{{ url_for('proje_yeni', aksaklik=a.id) }}">Projeye dönüştür</a>
+        <form class="satir" method="post" action="{{ url_for('aksaklik_durum', aid=a.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="durum" value="Kapandı"><button class="btn kucuk">Kapat</button></form>
+        {% else %}<form class="satir" method="post" action="{{ url_for('aksaklik_durum', aid=a.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="durum" value="Açık"><button class="btn kucuk">Yeniden aç</button></form>{% endif %}
+      {% endif %}</td>
+    </tr>{% else %}<tr><td colspan="7" class="bos">Filtreye uyan bulgu yok.</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

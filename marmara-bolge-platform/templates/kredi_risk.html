@@ -1,0 +1,90 @@
+{% extends "base.html" %}{% from "_m.html" import rz, bar with context %}
+{% block baslik %}Kredi-Risk{% endblock %}
+{% block icerik %}
+<div class="ust">
+  <div><h1>Kredi-Risk</h1>
+  <small>Vadesi geçmiş borç raporu ({{ trt(k.ozet.rapor_tarihi) }}, önceki hafta {{ trt(k.ozet.onceki_tarih) }}) ve WhatsApp onay yazışmaları — saha müdürü kırılımlı</small></div>
+</div>
+
+<div class="kpiler">
+  <div class="kpi kirmizi"><div class="e">Vadesi geçmiş</div><div class="d">{{ ay(k.ozet.vadesi_gecmis) }}</div><div class="a">TL · {{ k.ozet.borclu }} bayi</div></div>
+  <div class="kpi {{ 'kirmizi' if k.ozet.fark > 0 else 'yesil' }}"><div class="e">Haftalık değişim</div><div class="d">{{ H.fark_tl(k.ozet.fark) }}</div><div class="a">önceki rapora göre</div></div>
+  <div class="kpi kirmizi"><div class="e">31 gün + eskiyen</div><div class="d">{{ ay(k.ozet.eskiyen) }}</div><div class="a">{{ yuzde(k.ozet.eskiyen / k.ozet.vadesi_gecmis if k.ozet.vadesi_gecmis else 0) }} · {{ k.ozet.kritik }} bayi</div></div>
+  <div class="kpi"><div class="e">Açık hesap</div><div class="d">{{ ay(k.ozet.acik_hesap) }}</div><div class="a">çek/senet {{ ay(k.ozet.cek_senet) }}</div></div>
+  <div class="kpi"><div class="e">Toplam risk</div><div class="d">{{ ay(k.ozet.toplam_risk) }}</div><div class="a">{{ k.ozet.bayi }} müşteri</div></div>
+  <div class="kpi"><div class="e">Onay talebi</div><div class="d">{{ k.ozet.onay }}</div><div class="a">WhatsApp · onay oranı {{ yuzde(k.ozet.onay_oran) }}</div></div>
+  <div class="kpi"><div class="e">Yanıt süresi</div><div class="d">{{ H.sure_fmt(k.ozet.medyan_dk) }}</div><div class="a">medyan (bölge müdürü)</div></div>
+</div>
+
+<div class="kart">
+  <div class="kart-bas"><h2>Mıntıka kırılımı</h2><small>Tutarlar TL · "eskiyen" = 31 gün ve üzeri</small></div>
+  <div class="tablo-kap"><table>
+    <tr><th>Saha müdürü</th><th class="s">Borçlu bayi</th><th class="s">Vadesi geçmiş</th><th class="s">Haftalık değişim</th>
+      {% for kol, ad in H.YAS_KOLONLARI %}<th class="s">{{ ad }}</th>{% endfor %}
+      <th class="s">Eskiyen payı</th><th class="s">Açık hesap</th><th class="s">Toplam risk</th><th class="s">Onay talebi</th></tr>
+    {% for r in k.sm %}
+    <tr class="{{ 'gecik' if r.eskiyen }}">
+      <td><a href="{{ url_for('kredi_risk', sm=r.sm) }}"><b>{{ r.kod }}</b> {{ r.sm|ad }}</a></td>
+      <td class="s">{{ r.borclu }}<small class="soluk">/{{ r.bayi }}</small></td>
+      <td class="s"><b>{{ ay(r.vadesi_gecmis) }}</b></td>
+      <td class="s {{ 'neg' if r.fark > 0 }}">{{ H.fark_tl(r.fark) }}</td>
+      {% for kol, ad in H.YAS_KOLONLARI %}<td class="s {{ 'neg' if kol in ('g31_45','g45_ustu') and r[kol] }}">{{ ay(r[kol]) }}</td>{% endfor %}
+      <td class="s">{{ yuzde(r.eskiyen_pay) }}</td>
+      <td class="s">{{ ay(r.acik_hesap) }}</td><td class="s">{{ ay(r.toplam_risk) }}</td><td class="s">{{ r.onay }}</td>
+    </tr>{% endfor %}
+  </table></div>
+</div>
+
+<div class="izgara iki">
+  <div class="kart"><div class="kart-bas"><h2>Yaşlandırma (bin TL)</h2><small>mıntıka bazında</small></div>
+    <div class="kart-ic" style="height:260px"><canvas data-grafik="yas" data-veri="kredi-veri"></canvas></div></div>
+  <div class="kart"><div class="kart-bas"><h2>Onay talebi sayısı</h2><small>WhatsApp · tüm dönem</small></div>
+    <div class="kart-ic" style="height:260px"><canvas data-grafik="onay-sm" data-veri="kredi-veri"></canvas></div></div>
+</div>
+<script type="application/json" id="kredi-veri">{{ grafik|tojson }}</script>
+
+<div class="kart">
+  <form class="filtre" method="get">
+    <label>Saha müdürü<select name="sm"><option value="">Tümü</option>{% for s in H.SM_ADLARI %}<option value="{{ s }}" {{ 'selected' if f.sm==s }}>{{ H.SM_KOD[s] }} · {{ s|ad }}</option>{% endfor %}</select></label>
+    <label>Seviye<select name="seviye"><option value="">Tümü</option>{% for x in ['Kritik','Yüksek','İzlenecek'] %}<option {{ 'selected' if f.seviye==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Onay durumu<select name="durum"><option value="">Tümü</option>{% for x in H.ONAY_DURUMLARI %}<option {{ 'selected' if f.durum==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Ara<input name="q" value="{{ f.q }}" placeholder="bayi, il, açıklama…"></label>
+    <button class="btn">Uygula</button>{% if f.values()|select|list %}<a class="btn" href="{{ url_for('kredi_risk') }}">Temizle</a>{% endif %}
+  </form>
+  <div class="kart-bas"><h2>Borçlu bayiler ({{ borclu|length }})</h2><small>risk skoruna göre sıralı — skor, gün aşımı ağırlıklı</small></div>
+  <div class="tablo-kap"><table>
+    <tr><th>Bayi</th><th>Saha müdürü</th><th>İl</th><th class="s">Vadesi geçmiş</th><th class="s">Değişim</th>
+      {% for kol, ad in H.YAS_KOLONLARI %}<th class="s">{{ ad }}</th>{% endfor %}
+      <th>Seviye</th><th class="s">Skor</th><th>Saha açıklaması</th></tr>
+    {% for b in borclu %}
+    <tr class="{{ 'gecik' if b.seviye=='Kritik' }}">
+      <td>{% if b.bayi_id %}<a href="{{ url_for('bayi_kart', bid=b.bayi_id) }}"><b>{{ b.unvan }}</b></a>{% else %}<b>{{ b.unvan }}</b><br><small class="soluk">portföyle eşleşmedi</small>{% endif %}</td>
+      <td><small>{{ H.SM_KOD.get(b.sm_adi,'') }} · {{ b.sm_adi|ad }}</small></td>
+      <td><small>{{ b.il if b.il != '#N/A' else '–' }}</small></td>
+      <td class="s"><b>{{ ay(b.vadesi_gecmis) }}</b></td>
+      <td class="s {{ 'neg' if b.fark > 0 }}">{{ H.fark_tl(b.fark) }}</td>
+      {% for kol, ad in H.YAS_KOLONLARI %}<td class="s {{ 'neg' if kol in ('g31_45','g45_ustu') and b[kol] }}">{{ ay(b[kol]) if b[kol] else '' }}</td>{% endfor %}
+      <td>{{ rz(b.seviye) }}</td><td class="s">{{ b.skor }}</td>
+      <td style="max-width:280px"><small class="soluk">{{ (b.aciklama or '')[:110] }}</small></td>
+    </tr>{% else %}<tr><td colspan="13" class="bos">Filtreye uyan borçlu bayi yok.</td></tr>{% endfor %}
+  </table></div>
+</div>
+
+<div class="kart">
+  <div class="kart-bas"><h2>Onay akışı — WhatsApp ({{ onay_sayi }} kayıt)</h2><small>Son kayıtlar önce · tutarlar bin TL (ktl)</small></div>
+  <div class="tablo-kap"><table>
+    <tr><th>Tarih</th><th>Saha müdürü</th><th>Bayi</th><th class="s">Unpaid</th><th class="s">Limit</th><th class="s">Risk</th><th class="s">Sipariş</th><th>Sonuç</th><th class="s">Yanıt</th><th>Talep</th></tr>
+    {% for o in onaylar %}
+    <tr>
+      <td><small>{{ o.zaman.replace('T',' ') }}</small></td>
+      <td><small>{{ H.SM_KOD.get(o.sm_adi,'') }}</small></td>
+      <td>{% if o.bayi_id %}<a href="{{ url_for('bayi_kart', bid=o.bayi_id) }}">{{ o.bayi[:34] }}</a>{% else %}<small class="soluk" title="Mesajda bayi adı geçmiyor">– <span style="font-size:10px">(bayi yok)</span></small>{% endif %}</td>
+      <td class="s">{{ sayi(o.unpaid) }}</td><td class="s">{{ sayi(o.limit_tl) }}</td><td class="s">{{ sayi(o.risk) }}</td><td class="s">{{ sayi(o.siparis) }}</td>
+      <td>{{ rz(o.onay_durumu) }}</td>
+      <td class="s"><small>{{ H.sure_fmt(o.sure_dk) }}</small></td>
+      <td style="max-width:420px"><details><summary><small>{{ o.metin[:70] }}…</small></summary><div class="not-blok" style="white-space:pre-line;font-size:12.5px">{{ o.metin }}{% if o.yanit %}<div class="bilgi-kutu" style="margin-top:6px"><b>Yanıt:</b> {{ o.yanit }}</div>{% endif %}</div></details></td>
+    </tr>{% else %}<tr><td colspan="10" class="bos">Filtreye uyan kayıt yok.</td></tr>{% endfor %}
+  </table></div>
+  {% if onay_sayi > onaylar|length %}<div class="kart-ic"><small class="soluk">İlk {{ onaylar|length }} kayıt gösteriliyor — daraltmak için filtreleri kullanın veya Excel'e aktarın.</small></div>{% endif %}
+</div>
+{% endblock %}

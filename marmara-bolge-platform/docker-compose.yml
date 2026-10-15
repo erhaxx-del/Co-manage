@@ -1,0 +1,8 @@
+services:
+  platform:
+    build: .
+    ports: ["8000:8000"]
+    volumes: ["./instance:/app/instance"]   # veritabanı, gizli anahtar ve ilk şifreler burada kalıcı
+    restart: unless-stopped
+    environment:
+      - GUVENLI_CEREZ=0   # HTTPS arkasında yayınlarken 1 yapın

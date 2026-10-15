@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}Bayi Portföyü{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Bayi Portföyü</h1><small>{{ bayiler|length }} bayi · Ağustos 2026 pompa satışı + 2025/2026 Ocak–Temmuz kârlılık · risk = en ağır açık bulgu</small></div></div>
+<div class="kart">
+  <form class="filtre" method="get">
+    <label>Saha müdürü<select name="sm"><option value="">Tümü</option>{% for s in H.SM_ADLARI %}<option {{ 'selected' if f.sm==s }}>{{ s }}</option>{% endfor %}</select></label>
+    <label>İl<select name="il"><option value="">Tümü</option>{% for x in iller %}<option {{ 'selected' if f.il==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Segment<select name="segment"><option value="">Tümü</option>{% for x in 'ABC' %}<option {{ 'selected' if f.segment==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Risk<select name="risk"><option value="">Tümü</option>{% for x in ['Kritik','Yüksek','Orta','Bilgi','Temiz'] %}<option {{ 'selected' if f.risk==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Sırala<select name="sirala">{% for k,v in [('hacim','Hacim'),('risk','Risk'),('yoy','Yıllık düşüş'),('kar','Kâr (düşükten)'),('ziyaret','En eski ziyaret'),('sm','Saha müdürü'),('unvan','Ünvan')] %}<option value="{{ k }}" {{ 'selected' if sirala==k }}>{{ v }}</option>{% endfor %}</select></label>
+    <label>Ara<input name="q" value="{{ f.q }}" placeholder="ünvan, kod, ilçe"></label><button class="btn">Uygula</button>
+  </form>
+  <div class="tablo-kap"><table>
+    <tr><th>Bayi</th><th>Saha müdürü</th><th>Seg.</th><th class="s">Ağustos m³</th><th class="s">Sıfır gün</th><th class="s">Ay içi trend</th><th class="s">Yıllık hacim</th><th class="s">YTD kâr (bin TL)</th><th class="s">Kâr TL/m³</th><th>Son ziyaret</th><th>Risk</th></tr>
+    {% for b in bayiler %}<tr>
+      <td><a href="{{ url_for('bayi_kart', bid=b.id) }}"><b>{{ b.unvan[:52] }}</b></a><br><small><span class="kod">{{ b.ist_kodu }}</span> {{ b.ilce }} / {{ b.il }} · {{ b.marka }} · {{ b.tip }}</small></td>
+      <td><small>{{ b.sm_adi }}</small></td><td><span class="seg {{ b.segment }}">{{ b.segment }}</span></td>
+      <td class="s">{{ sayi(b.ay_hacim) }}</td><td class="s {{ 'neg' if b.sifir_gun }}">{{ b.sifir_gun or '' }}</td>
+      <td class="s {{ 'neg' if (b.trend or 0) < -0.15 }}">{{ yuzde(b.trend,0) if b.trend is not none else '–' }}</td>
+      <td class="s {{ 'neg' if (b.yoy or 0) < -0.15 }}">{{ yuzde(b.yoy,0) if b.yoy is not none else '–' }}</td>
+      <td class="s {{ 'neg' if (b.ytd26_kar or 0) < 0 }}">{{ sayi((b.ytd26_kar or 0)/1000) }}</td>
+      <td class="s">{{ sayi(b.kar_m3) if b.kar_m3 is not none else '–' }}</td>
+      <td><small>{{ trt(b.son_ziyaret) or '—' }}</small></td>
+      <td>{{ rz(b.risk) }}{% if b.bulgu %} <small>({{ b.bulgu }})</small>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="11" class="bos">Kayıt yok.</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

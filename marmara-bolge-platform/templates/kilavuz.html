@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block baslik %}Kılavuz{% endblock %}
+{% block icerik %}
+<div class="ust"><div><h1>Kullanım Kılavuzu</h1><small>Saha müdürleri için kısa rehber</small></div></div>
+<div class="izgara iki">
+<div class="kart"><div class="kart-bas"><h2>Bu platform ne işe yarar?</h2></div><div class="kart-ic not-blok">
+<p>Marmara Bölgesi'ndeki altı saha müdürünün projelerini, gelişmelerini, istasyon ziyaretlerini ve mıntıka performansını tek yerde toplar. Amaç denetim değil, işi görünür kılmaktır: bir işi burada kaydettiğinizde toplantıda yeniden anlatmanız gerekmez.</p>
+<p><b>Herkes tüm bölgeyi görür</b>, ancak <b>yalnızca kendi mıntıkasının kayıtlarını</b> ekleyip değiştirebilir. Bölge müdürü tüm kayıtları düzenleyebilir.</p>
+<p><b>Test modu:</b> Şu anda platform deneme aşamasındadır; giriş ekranı kapalıdır ve platform doğrudan açılır. Soldaki turuncu kutudan kullanıcı değiştirerek farklı rolleri deneyebilirsiniz. Kullanıma alınırken giriş ekranı açılacaktır.</p>
+<p><b>Hesap açmak:</b> Giriş ekranında "Kayıt olun" → mıntıkanızı seçin → adınızı, kullanıcı adınızı ve şifrenizi belirleyin. Bölge müdürü onayladıktan sonra giriş yapabilirsiniz.</p>
+<p><b>Ziyaretçi hesabı:</b> Kayıt ekranında "Ziyaretçi" seçilir. Ziyaretçi tüm sayfaları görüntüler ama proje, gelişme veya ziyaret ekleyemez, değiştiremez ve Excel'e aktaramaz. Bölge müdürü onayı gerekir.</p>
+<p>Sizden beklenen dört şey:</p>
+<ol><li><b>Yeni projeyi kaydetmek</b> — Projeler → + Yeni proje</li>
+<li><b>Gelişmeleri tarih tarih yazmak</b> — Proje kartında "Gelişme ekle" (haftada en az bir kez)</li>
+<li><b>Biten projeyi kapatmak</b> — gelişme eklerken aşama "Tamamlandı" veya Düzenle → Durum</li>
+<li><b>Ziyaretlerinizi planlamak ve sonrasını yazmak</b> — İstasyon Ziyaretleri</li></ol>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Haftalık rutin — 15 dakika</h2></div><div class="kart-ic not-blok">
+<p><b>Pazartesi sabah:</b> Pano'daki "Benim listem" kutusuna bakın — geciken, bu hafta terminli ve 14 gündür gelişme yazılmamış projeleriniz orada. Ardından İstasyon Ziyaretleri → Haftalık plan'dan haftanızı kurun.</p>
+<p><b>Hafta içi:</b> Her ziyaret dönüşünde ziyaretin "Gerçekleşti" düğmesine basın ve kısa not yazın. Proje ilerledikçe proje kartından gelişme ekleyin.</p>
+<p><b>Cuma:</b> Biten projeleri kapatın. Gelişme kaydı olmayan açık projelere bir satır ekleyin — yoksa panoda "sessiz iş" olarak görünür.</p>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Proje numaraları</h2></div><div class="kart-ic not-blok">
+<p>Numara sizin kodunuzla başlar ve <b>otomatik önerilir</b>: NW1 Güney Bölge · NW11 Ozan · NW12 Tunahan · NW13 Engin · NW14 Salih · NW15 Bedir · NW16 Yüksel.</p>
+<p><b>Ana proje:</b> NW14-1, NW14-2 … <b>Alt adım:</b> ana projenin numarasına sıra eklenir: NW14-1 → NW14-11, NW14-12. Alt adım açmak için proje kartında "+ Alt adım" düğmesini kullanın.</p>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>İyi bir gelişme kaydı</h2></div><div class="kart-ic not-blok">
+<p>"Görüşüldü" değil, <b>"Bayiyle görüşüldü, iskonto talebi 0,40 TL/lt, GM onayı isteniyor"</b>. Her kayıtta bir <b>sonraki adım</b> ve <b>hedef tarih</b> yazın.</p>
+<p>İşiniz tıkandıysa aşamayı <b>"Engel"</b> seçin — kırmızı görünür ve bölge müdürünün dikkatine düşer. Engel işaretlemek kötü not değil, destek talebidir.</p>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Renkler</h2></div><div class="kart-ic">
+<div class="etiketler" style="gap:10px"><span class="rz kirmizi">Geciken / Gecikmiş plan / Kritik / Engel</span><span class="rz turuncu">Bu hafta / Yüksek</span><span class="rz sari">Bu ay / Orta / Beklemede</span><span class="rz mavi">Devam ediyor / Gelecek hafta / Planlandı</span><span class="rz yesil">Tamamlandı / Gerçekleşti</span><span class="rz gri">İleride / İptal / Düşük</span></div>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Aksaklıkları projeye dönüştürmek</h2></div><div class="kart-ic not-blok">
+<p>Aksaklıklar sayfasındaki her bulgunun yanında <b>"Projeye dönüştür"</b> düğmesi vardır. Tıkladığınızda bulgunun bilgileriyle doldurulmuş proje formu açılır; kaydettiğinizde bulgu "Projeye dönüştü" olarak işaretlenir ve projeyle bağlanır.</p>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Bölge müdürüne iş atamak</h2></div><div class="kart-ic not-blok">
+<p>Bölge müdüründen onay, karar, destek veya ortak ziyaret beklediğiniz her konuyu <b>"Bölge Müdürüne İşler" → "+ Bölge müdürüne iş ata"</b> ile açın. Öncelik ve istenen tarihi yazın; ilgili bayi ve projeyi seçebilirsiniz. İş, bölge müdürünün <b>"Saha'dan Gelen İşler"</b> ekranına ve panosuna düşer.</p>
+<p>Durum değişiklikleri ve yanıtlar işin kartında görünür; aynı kartta not yazarak yazışabilirsiniz. İş "Yeni" durumundayken düzenleyebilir ya da geri çekebilirsiniz.</p>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Projeleri arşivlemek ve silmek</h2></div><div class="kart-ic not-blok">
+<p>Projeler sayfasında satır başındaki kutularla projeleri <b>tek tek</b>, başlıktaki kutuyla <b>görünen tümünü</b> seçin. Üstte beliren çubuktan <b>Arşivle</b>, <b>Arşivden çıkar</b> veya <b>Sil</b>'i seçin. Yalnızca kendi mıntıkanızın projelerinde kutu çıkar.</p>
+<p><b>Arşiv</b> projeyi panodan ve listelerden kaldırır ama saklar ("Görünüm: Arşiv" ile görürsünüz). <b>Sil</b> kalıcıdır ve gelişme kayıtlarını da siler — biten işler için arşivi tercih edin.</p>
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Kredi-Risk sayfası</h2></div><div class="kart-ic not-blok">
+<p><b>Nereden geliyor?</b> Haftalık "vadesi geçmiş borç raporu" ile bölge WhatsApp grubundaki onay yazışmaları. Kendi mıntıkanızı görmek için üstteki mıntıka kırılımında kodunuza tıklayın.</p>
+<p><b>Neye bakın?</b> Sıralama <b>risk skoruna</b> göredir: borç ne kadar eskiyse ağırlığı o kadar yüksektir. <b>31 gün ve üzeri</b> bakiye tahsilat riskidir, kırmızı gösterilir; "Haftalık değişim" bir önceki rapora göre artış/azalıştır.</p>
+<p><b>Ne yapın?</b> Kritik seviyedeki her bayi için bir <b>proje</b> açın (tahsilat planı, ipotek/teminat, ödeme taahhüdü) ve gelişmeleri oraya yazın. Bayi kartında o bayinin borç künyesi ve geçmiş onay talepleri bir aradadır — ziyaret öncesi oraya bakın.</p>
+<p><b>Onay akışı:</b> Gruptaki talepleriniz ve bölge müdürünün yanıtı burada kayıt altındadır (tutarlar bin TL). Talebi net yazmak yanıtı hızlandırır: bayi adı, unpaid, limit, sipariş tutarı, risk ve ödeme taahhüdü.</p>
+</div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}{% from "_m.html" import rz, bar, sirali with context %}
+{% block baslik %}Projeler{% endblock %}
+{% block icerik %}
+<div class="ust">
+  <div><h1>Projeler</h1><small>{{ projeler|length }} kayıt{{ ' · arşiv görünümü' if f.gorunum=='arsiv' }} · herkes tüm bölgeyi görür, yalnızca kendi mıntıkasını düzenler</small></div>
+  {% if not salt_okunur %}<div class="sag"><a class="btn ana" href="{{ url_for('proje_yeni') }}">+ Yeni proje</a></div>{% endif %}
+</div>
+<div class="kart">
+  <form class="filtre" method="get">
+    <label>Saha müdürü<select name="sm"><option value="">Tümü</option>{% for s in H.SM_ADLARI %}<option {{ 'selected' if f.sm==s }}>{{ s }}</option>{% endfor %}</select></label>
+    <label>Departman<select name="dep"><option value="">Tümü</option>{% for x in H.DEPARTMANLAR %}<option {{ 'selected' if f.dep==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Öncelik<select name="onc"><option value="">Tümü</option>{% for x in H.ONCELIKLER %}<option {{ 'selected' if f.onc==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Durum<select name="durum"><option value="">Tümü</option>{% for x in H.DURUMLAR %}<option {{ 'selected' if f.durum==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Zaman<select name="zaman"><option value="">Tümü</option>{% for x in ['Geciken','Bugün','Bu Hafta','Bu Ay','İleride','Tarihsiz','Tamamlandı','İptal'] %}<option {{ 'selected' if f.zaman==x }}>{{ x }}</option>{% endfor %}</select></label>
+    <label>Seviye<select name="seviye"><option value="">Tümü</option><option {{ 'selected' if f.seviye=='Ana Proje' }}>Ana Proje</option><option {{ 'selected' if f.seviye=='Alt Adım' }}>Alt Adım</option></select></label>
+    <label>Sadece açık<select name="acik"><option value="">Hayır</option><option value="1" {{ 'selected' if f.acik=='1' }}>Evet</option></select></label>
+    <label>Görünüm<select name="gorunum"><option value="">Aktif projeler</option><option value="arsiv" {{ 'selected' if f.gorunum=='arsiv' }}>Arşiv ({{ arsiv_sayi }})</option><option value="tumu" {{ 'selected' if f.gorunum=='tumu' }}>Tümü</option></select></label>
+    <label>Ara<input name="q" value="{{ f.q }}" placeholder="ad, ID, bayi, not…"></label>
+    <input type="hidden" name="sirala" value="{{ sirala }}"><input type="hidden" name="yon" value="{{ yon }}">
+    <button class="btn">Uygula</button>{% if f.values()|select|list %}<a class="btn" href="{{ url_for('projeler') }}">Temizle</a>{% endif %}
+  </form>
+  {% set secilebilir = not salt_okunur %}
+  <form id="toplu-form" method="post" action="{{ url_for('proje_toplu') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="geri" value="{{ request.full_path }}">
+  {% if secilebilir %}
+  <div class="toplu-cubuk" id="toplu-cubuk" hidden>
+    <b><span id="secili-sayi">0</span> proje seçili</b>
+    <span class="soluk">Ana proje seçilince alt adımları da işleme girer</span>
+    <span style="flex:1"></span>
+    {% if f.gorunum != 'arsiv' %}<button class="btn kucuk" name="islem" value="arsivle">Arşivle</button>{% endif %}
+    {% if f.gorunum in ('arsiv','tumu') %}<button class="btn kucuk" name="islem" value="arsivden_cikar">Arşivden çıkar</button>{% endif %}
+    <button class="btn kucuk tehlike" name="islem" value="sil">Sil</button>
+    <button class="btn kucuk" type="button" id="secimi-kaldir">Seçimi kaldır</button>
+  </div>
+  {% endif %}
+  <div class="tablo-kap"><table>
+    <tr>{% if secilebilir %}<th class="sec"><input type="checkbox" id="tumunu-sec" title="Görünen ve yetkili olduğunuz tüm projeleri seç" aria-label="Tümünü seç"></th>{% endif %}<th>{{ sirali('id','ID',sirala,yon,f) }}</th><th>{{ sirali('ad','Proje',sirala,yon,f) }}</th><th>{{ sirali('sm','Saha müdürü',sirala,yon,f) }}</th>
+      <th>{{ sirali('departman','Departman',sirala,yon,f) }}</th><th>{{ sirali('oncelik','Öncelik',sirala,yon,f) }}</th><th>{{ sirali('durum','Durum',sirala,yon,f) }}</th>
+      <th>{{ sirali('ilerleme','İlerleme',sirala,yon,f) }}</th><th>{{ sirali('termin','Termin',sirala,yon,f) }}</th><th class="s">{{ sirali('kalan','Kalan',sirala,yon,f) }}</th>
+      <th>Zaman</th><th>Son gelişme</th><th class="s">{{ sirali('skor','Skor',sirala,yon,f) }}</th></tr>
+    {% for p in projeler %}
+    <tr class="{{ 'gecik' if p.zaman=='Geciken' }} {{ 'tamam' if p.durum=='Tamamlandı' }} {{ 'alt-adim' if p.ust_id }} {{ 'arsivde' if p.arsiv }}">
+      {% if secilebilir %}<td class="sec">{% if duzenleyebilir(p.sm_adi) %}<input type="checkbox" name="sec" value="{{ p.id }}" data-ust="{{ p.ust_id or '' }}" aria-label="{{ p.id }} seç">{% endif %}</td>{% endif %}
+      <td><span class="kod">{{ p.id }}</span>{% if p.arsiv %}<br><span class="rz gri">Arşiv</span>{% endif %}</td>
+      <td><a href="{{ url_for('proje_kart', pid=p.id) }}"><b>{{ p.ad }}</b></a>{% if p.bayi %}<br><small>{{ p.il }} · {{ p.bayi }}</small>{% endif %}</td>
+      <td><small>{{ p.sm_adi }}</small></td><td><small>{{ p.departman }}</small></td>
+      <td>{{ rz(p.oncelik) }}</td><td>{{ rz(p.durum) }}</td>
+      <td>{{ bar(p.ilerleme, p.durum=='Tamamlandı') }}<small>{{ yuzde(p.ilerleme,0) }}</small></td>
+      <td><small>{{ trt(p.termin) }}</small></td>
+      <td class="s {{ 'neg' if (p.kalan_gun or 0) < 0 }}">{{ p.kalan_gun if p.kalan_gun is not none else '' }}</td>
+      <td>{{ rz(p.zaman) }}</td>
+      <td style="max-width:260px">{% if p.son_gelisme_tarihi %}<small>{{ trt(p.son_gelisme_tarihi) }}{% if p.temassiz and p.temassiz>=14 %} · <span class="neg">{{ p.temassiz }} gün sessiz</span>{% endif %}</small><br><small class="soluk">{{ (p.son_gelisme or '')[:80] }}</small>{% else %}<small class="soluk">— kayıt yok</small>{% endif %}</td>
+      <td class="s"><small>{{ p.skor if p.skor else '' }}</small></td>
+    </tr>{% else %}<tr><td colspan="13" class="bos">Filtreye uyan proje yok.</td></tr>{% endfor %}
+  </table></div>
+  </form>
+</div>
+{% endblock %}

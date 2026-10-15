@@ -1,0 +1,58 @@
+{% extends "base.html" %}{% from "_m.html" import rz with context %}
+{% block baslik %}{{ b.unvan[:40] }}{% endblock %}
+{% block icerik %}
+<div class="ust"><div><small><a href="{{ url_for('bayiler', sm=b.sm_adi) }}">Bayi portföyü</a> › {{ b.sm_adi }}</small>
+<h1>{{ b.unvan }}</h1><div class="etiketler"><span class="kod">{{ b.ist_kodu }}</span> <span class="seg {{ b.segment }}">Segment {{ b.segment }}</span> {{ rz(b.risk) }} <span class="rz gri">{{ b.marka }} · {{ b.tip }}</span></div></div>
+<div class="sag">{% if duzenleyebilir(b.sm_adi) %}<a class="btn ana" href="{{ url_for('ziyaret_yeni', bayi=b.id) }}">+ Ziyaret planla</a>{% endif %}</div></div>
+<div class="kpiler">
+  <div class="kpi"><div class="e">Ağustos hacmi</div><div class="d">{{ sayi(b.ay_hacim) }}</div><div class="a">m³ · günlük {{ sayi((b.ay_hacim or 0)/31,1) }}</div></div>
+  <div class="kpi {{ 'kirmizi' if b.sifir_gun }}"><div class="e">Satış yapılmayan gün</div><div class="d">{{ b.sifir_gun }}</div><div class="a">Ağustos, 31 gün</div></div>
+  <div class="kpi {{ 'kirmizi' if (b.trend or 0) < -0.15 }}"><div class="e">Ay içi trend</div><div class="d">{{ yuzde(b.trend,0) if b.trend is not none else '–' }}</div><div class="a">16–31 / 1–15 Ağustos</div></div>
+  <div class="kpi {{ 'kirmizi' if (b.yoy or 0) < -0.15 }}"><div class="e">Yıllık hacim</div><div class="d">{{ yuzde(b.yoy,0) if b.yoy is not none else '–' }}</div><div class="a">{{ sayi(b.ytd25_hacim) }} → {{ sayi(b.ytd26_hacim) }} m³</div></div>
+  <div class="kpi {{ 'kirmizi' if (b.ytd26_kar or 0) < 0 }}"><div class="e">YTD final kâr</div><div class="d">{{ sayi((b.ytd26_kar or 0)/1e6,2) }}</div><div class="a">mn TL · {{ sayi(b.kar_m3) if b.kar_m3 is not none else '–' }} TL/m³</div></div>
+  <div class="kpi"><div class="e">Otogaz</div><div class="d">{{ sayi(b.otogaz) }}</div><div class="a">m³ · Ağustos</div></div>
+</div>
+<div class="izgara iki">
+<div class="kart"><div class="kart-bas"><h2>Aksaklıklar ({{ aksakliklar|length }})</h2></div><div class="kart-ic">
+  {% for a in aksakliklar %}<div style="margin-bottom:10px">{{ rz(a.onem) }} {{ rz(a.durum) }} <b>{{ a.bulgu }}</b><br><small>{{ a.detay }}</small><br><small class="soluk">Öneri: {{ a.aksiyon }} · {{ a.departman }}</small>
+    {% if a.durum=='Açık' and duzenleyebilir(a.sm_adi) %}<div style="margin-top:4px"><a class="btn kucuk" href="{{ url_for('proje_yeni', aksaklik=a.id) }}">Projeye dönüştür</a></div>{% elif a.proje_id %}<div><a class="kod" href="{{ url_for('proje_kart', pid=a.proje_id) }}">{{ a.proje_id }}</a></div>{% endif %}</div>
+  {% else %}<small>Bu bayi için bulgu yok.</small>{% endfor %}
+</div></div>
+<div class="kart"><div class="kart-bas"><h2>Ziyaret geçmişi ve planlar ({{ ziyaretler|length }})</h2></div><div class="kart-ic">
+  {% for z in ziyaretler %}<div style="margin-bottom:8px">{{ rz(z.zaman) }} <b>{{ trt(z.tarih, True) }}</b> · {{ z.amac }}{% if z.proje_id %} · <a class="kod" href="{{ url_for('proje_kart', pid=z.proje_id) }}">{{ z.proje_id }}</a>{% endif %}{% if z.notu %}<br><small>{{ z.notu }}</small>{% endif %}</div>
+  {% else %}<small>Kayıtlı ziyaret yok.</small>{% endfor %}
+</div></div>
+</div>
+{% if borc or onaylar %}
+<div class="kart" {% if borc and borc.seviye=='Kritik' %}style="border-left:4px solid var(--kirmizi)"{% endif %}>
+  <div class="kart-bas"><h2>Kredi-Risk</h2><small><a href="{{ url_for('kredi_risk', q=b.unvan[:18]) }}">Kredi-Risk sayfası →</a></small></div>
+  <div class="kart-ic">
+  {% if borc %}
+    <div class="kunye">
+      <div><span>Vadesi geçmiş</span><b class="{{ 'neg' if borc.vadesi_gecmis }}">{{ bin_tl(borc.vadesi_gecmis) }} TL</b></div>
+      <div><span>Haftalık değişim</span><b class="{{ 'neg' if borc.fark > 0 }}">{{ H.fark_tl(borc.fark) }}</b></div>
+      {% for kol, ad in H.YAS_KOLONLARI %}<div><span>{{ ad }}</span><b class="{{ 'neg' if kol in ('g31_45','g45_ustu') and borc[kol] }}">{{ bin_tl(borc[kol]) if borc[kol] else '–' }}</b></div>{% endfor %}
+      <div><span>Açık hesap</span><b>{{ bin_tl(borc.acik_hesap) }}</b></div>
+      <div><span>Çek / senet</span><b>{{ bin_tl(borc.cek_senet) }}</b></div>
+      <div><span>Toplam risk</span><b>{{ bin_tl(borc.toplam_risk) }}</b></div>
+      <div><span>Seviye</span><b>{{ rz(borc.seviye) }}</b></div>
+    </div>
+    {% if borc.aciklama %}<div class="bilgi-kutu" style="margin-top:10px"><b>Saha açıklaması:</b> {{ borc.aciklama }}</div>{% endif %}
+    <small class="soluk">Kaynak: {{ trt(borc.rapor_tarihi) }} tarihli vadesi geçmiş borç raporu</small>
+  {% else %}<small class="soluk">Bu bayi borç raporunda yer almıyor.</small>{% endif %}
+  </div>
+  {% if onaylar %}
+  <div class="tablo-kap"><table>
+    <tr><th>Tarih</th><th class="s">Unpaid</th><th class="s">Limit</th><th class="s">Risk</th><th>Sonuç</th><th>Talep (WhatsApp)</th></tr>
+    {% for o in onaylar %}<tr>
+      <td><small>{{ o.zaman.replace('T',' ') }}</small></td>
+      <td class="s">{{ sayi(o.unpaid) }}</td><td class="s">{{ sayi(o.limit_tl) }}</td><td class="s">{{ sayi(o.risk) }}</td>
+      <td>{{ rz(o.onay_durumu) }}</td>
+      <td style="max-width:420px"><details><summary><small>{{ o.metin[:60] }}…</small></summary><div style="white-space:pre-line;font-size:12.5px">{{ o.metin }}{% if o.yanit %}<div class="bilgi-kutu" style="margin-top:6px"><b>Yanıt:</b> {{ o.yanit }}</div>{% endif %}</div></details></td>
+    </tr>{% endfor %}
+  </table></div>
+  <div class="kart-ic"><small class="soluk">Tutarlar bin TL (ktl) · onay talepleri WhatsApp yazışmalarından otomatik çıkarılmıştır</small></div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

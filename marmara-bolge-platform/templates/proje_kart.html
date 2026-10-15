@@ -1,0 +1,91 @@
+{% extends "base.html" %}{% from "_m.html" import rz, bar with context %}
+{% block baslik %}{{ p.id }} · {{ p.ad }}{% endblock %}
+{% block icerik %}
+{% set yetki = duzenleyebilir(p.sm_adi) %}
+<div class="ust">
+  <div><small>{% if ust %}<a href="{{ url_for('proje_kart', pid=ust.id) }}">{{ ust.id }} · {{ ust.ad }}</a> › {% endif %}Proje Kartı</small>
+  <h1><span class="kod" style="font-size:15px">{{ p.id }}</span> {{ p.ad }}</h1>
+  <div class="etiketler">{{ rz(p.durum) }} {{ rz(p.oncelik) }} {{ rz(p.zaman) }} <span class="rz gri">{{ p.seviye }}</span></div></div>
+  <div class="sag">
+    {% if yetki %}<a class="btn" href="{{ url_for('proje_duzenle', pid=p.id) }}">Düzenle</a>
+    {% if not p.ust_id %}<a class="btn" href="{{ url_for('proje_yeni', ust=p.id) }}">+ Alt adım</a>{% endif %}
+    <a class="btn" href="{{ url_for('ziyaret_yeni', proje=p.id) }}">+ Ziyaret planla</a>
+    {% if ku.rol=='saha' %}<a class="btn" href="{{ url_for('talep_yeni', proje=p.id) }}">BM'ye iş ata</a>{% endif %}
+    <a class="btn ana" href="#gelisme-ekle">+ Gelişme ekle</a>
+    {% if not p.arsiv %}<form class="satir" method="post" action="{{ url_for('proje_toplu') }}" data-onay="{{ p.id }} arşive kaldırılsın mı?{{ ' Alt adımları da arşivlenir.' if not p.ust_id }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="sec" value="{{ p.id }}"><input type="hidden" name="geri" value="{{ url_for('projeler') }}"><button class="btn" name="islem" value="arsivle">Arşivle</button></form>{% endif %}{% endif %}
+  </div>
+</div>
+{% if p.arsiv %}<div class="mesaj uyari" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Bu proje arşivde{% if p.arsiv_tarihi %} ({{ trt(p.arsiv_tarihi[:10]) }} · {{ p.arsivleyen }}){% endif %} — panoda ve listelerde görünmez.
+  {% if yetki %}<form class="satir" method="post" action="{{ url_for('proje_toplu') }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="sec" value="{{ p.id }}"><input type="hidden" name="geri" value="{{ url_for('proje_kart', pid=p.id) }}"><button class="btn kucuk" name="islem" value="arsivden_cikar">Arşivden çıkar</button></form>{% endif %}</div>{% endif %}
+{% if not yetki %}<div class="mesaj bilgi">Bu proje {{ p.sm_adi }} mıntıkasına ait — görüntüleyebilirsiniz, değişiklik yalnızca proje sahibine ve bölge müdürüne açıktır.</div>{% endif %}
+
+<div class="kart"><div class="kart-ic">
+  <div class="kunye">
+    <div><span>Saha müdürü</span><b>{{ p.sm_adi }}</b></div>
+    <div><span>Departman</span><b>{{ p.departman }}</b></div>
+    <div><span>İş konusu</span><b>{{ p.is_konusu or '–' }}</b></div>
+    <div><span>İl / Bayi</span><b>{{ p.il or '–' }} / {{ p.bayi or '–' }}</b></div>
+    <div><span>Başlangıç → Termin</span><b>{{ trt(p.baslangic) or '–' }} → {{ trt(p.termin) }}</b></div>
+    <div><span>Kalan gün</span><b class="{{ 'neg' if (p.kalan_gun or 0) < 0 }}">{{ p.kalan_gun if p.kalan_gun is not none else '–' }}</b>{% if p.gecikme %} <small class="neg">({{ p.gecikme }} gün gecikme)</small>{% endif %}</div>
+    <div><span>İlerleme</span><b>{{ yuzde(p.ilerleme,0) }}</b>{{ bar(p.ilerleme, p.durum=='Tamamlandı') }}</div>
+    <div><span>Gelişme kaydı</span><b>{{ p.gelisme_sayisi }}</b>{% if p.temassiz is not none %} <small class="{{ 'neg' if p.temassiz>=14 }}">· son kayıttan {{ p.temassiz }} gün</small>{% endif %}</div>
+    {% if p.tamamlanma %}<div><span>Tamamlanma</span><b>{{ trt(p.tamamlanma) }}</b></div>{% endif %}
+    <div><span>Son güncelleme</span><b style="font-weight:500;font-size:12.5px">{{ p.guncelleyen }} · {{ (p.guncelleme or '')[:16] }}</b></div>
+  </div>
+  {% if p.aciklama %}<p style="margin:14px 0 0;white-space:pre-line">{{ p.aciklama }}</p>{% endif %}
+  {% if p.notlar %}<div class="bilgi-kutu" style="margin-top:10px"><b>Not:</b> {{ p.notlar }}</div>{% endif %}
+</div></div>
+
+{% if altlar or not p.ust_id %}
+<div class="kart"><div class="kart-bas"><h2>Alt adımlar ({{ altlar|length }})</h2>{% if yetki and not p.ust_id %}<a class="btn kucuk" href="{{ url_for('proje_yeni', ust=p.id) }}">+ Alt adım ekle</a>{% endif %}</div>
+<div class="tablo-kap"><table>
+  <tr><th>ID</th><th>Alt adım</th><th>Durum</th><th>İlerleme</th><th>Termin</th><th>Zaman</th><th>Son gelişme</th></tr>
+  {% for a in altlar %}<tr class="{{ 'gecik' if a.zaman=='Geciken' }} {{ 'tamam' if a.durum=='Tamamlandı' }}"><td><span class="kod">{{ a.id }}</span></td><td><a href="{{ url_for('proje_kart', pid=a.id) }}">{{ a.ad }}</a></td>
+    <td>{{ rz(a.durum) }}</td><td>{{ bar(a.ilerleme, a.durum=='Tamamlandı') }}<small>{{ yuzde(a.ilerleme,0) }}</small></td><td><small>{{ trt(a.termin) }}</small></td><td>{{ rz(a.zaman) }}</td>
+    <td><small>{{ trt(a.son_gelisme_tarihi) or '–' }}</small></td></tr>
+  {% else %}<tr><td colspan="7" class="bos">Alt adım yok.</td></tr>{% endfor %}
+</table></div></div>
+{% endif %}
+
+<div class="izgara yan">
+<div class="kart" id="gunluk"><div class="kart-bas"><h2>Gelişme günlüğü — adım adım</h2><small>{{ gelismeler|length }} kayıt</small></div>
+<div class="kart-ic">
+  {% if gelismeler %}<ol class="zc">
+  {% for g in gelismeler %}
+    <li class="{{ {'Engel':'engel','Tamamlandı':'tamam','Karar':'karar'}.get(g.asama,'') }}"><span class="n">{{ loop.index }}</span>
+      <div class="ust-s"><b style="color:var(--metin)">{{ trt(g.tarih, True) }}</b> {{ rz(g.asama) }}{% if g.ilerleme is not none %}<span>· %{{ (g.ilerleme*100)|round|int }}</span>{% endif %}<span>· {{ g.kaydeden }}</span>
+        {% if yetki %}<form class="satir" method="post" action="{{ url_for('gelisme_sil', gid=g.id) }}" data-onay="Bu gelişme kaydı silinsin mi?"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="btn kucuk tehlike" style="padding:0 6px">sil</button></form>{% endif %}</div>
+      <div class="metin">{{ g.metin }}</div>
+      {% if g.sonraki_adim %}<div class="sonraki">Sonraki adım: <b>{{ g.sonraki_adim }}</b>{% if g.sonraki_tarih %} · {{ trt(g.sonraki_tarih) }}{% endif %}</div>{% endif %}
+    </li>{% endfor %}
+  </ol>{% else %}<div class="bos">Henüz gelişme kaydı yok.</div>{% endif %}
+</div></div>
+
+<div>
+{% if yetki %}
+<form id="gelisme-form" class="kart" method="post" action="{{ url_for('gelisme_ekle', pid=p.id) }}"><div class="kart-bas" id="gelisme-ekle"><h2>Gelişme ekle</h2></div><div class="kart-ic">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  <div class="form-izgara" style="grid-template-columns:1fr 1fr">
+    <div class="alan"><label>Tarih</label><input type="date" name="tarih" value="{{ bugun.isoformat() }}"></div>
+    <div class="alan"><label>Aşama</label><select id="asama" name="asama">{% for a in H.ASAMALAR %}<option {{ 'selected' if a=='İlerleme' }}>{{ a }}</option>{% endfor %}</select></div>
+    <div class="alan genis"><label class="zorunlu">Ne yapıldı?</label><textarea name="metin" required placeholder="Somut yazın: 'Bayiyle görüşüldü, iskonto talebi 0,40 TL/lt, GM onayı isteniyor'"></textarea></div>
+    <div class="alan"><label>Bu tarihteki ilerleme (%)</label><input type="number" name="ilerleme" min="0" max="100" step="5" value="{{ ((p.ilerleme or 0)*100)|round|int }}"></div>
+    <div class="alan" style="justify-content:flex-end"><label class="kutu"><input type="checkbox" name="ilerleme_yansit" value="1" checked> Projenin ilerlemesine yansıt</label></div>
+    <div class="alan genis"><label>Sonraki adım</label><input name="sonraki_adim" placeholder="Bir sonraki somut hareket"></div>
+    <div class="alan"><label>Hedef tarih</label><input type="date" name="sonraki_tarih"></div>
+    <div class="alan genis" id="tamamla-kutu" hidden><label class="kutu"><input type="checkbox" name="tamamla" value="1" checked> Projeyi "Tamamlandı" olarak kapat</label></div>
+    <div class="alan genis" id="engel-kutu" hidden><label class="kutu"><input type="checkbox" name="beklemeye_al" value="1"> Proje durumunu "Beklemede" yap</label><span class="ipucu">Engel kayıtları kırmızı görünür ve bölge müdürünün dikkatine düşer.</span></div>
+  </div>
+  <div class="form-alt"><button class="btn ana">Gelişmeyi kaydet</button></div>
+</div></form>
+{% endif %}
+<div class="kart"><div class="kart-bas"><h2>İlgili ziyaretler ({{ ziyaretler|length }})</h2></div><div class="kart-ic">
+  {% for z in ziyaretler %}<div style="margin-bottom:6px;font-size:12.5px">{{ rz(z.zaman) }} <small>{{ trt(z.tarih) }}</small> · <a href="{{ url_for('bayi_kart', bid=z.bayi_id) }}">{{ z.ilce }} – {{ (z.unvan or '')[:30] }}</a><br><small class="soluk">{{ z.amac }}{% if z.notu %} · {{ z.notu[:70] }}{% endif %}</small></div>
+  {% else %}<small>Bu projeye bağlı ziyaret yok.</small>{% endfor %}
+</div></div>
+{% if yetki and not altlar %}
+<form method="post" action="{{ url_for('proje_sil', pid=p.id) }}" data-onay="{{ p.id }} ve tüm gelişme kayıtları kalıcı olarak silinsin mi?"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="btn tehlike kucuk">Projeyi sil</button></form>
+{% endif %}
+</div>
+</div>
+{% endblock %}
